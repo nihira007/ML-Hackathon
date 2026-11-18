@@ -1,13 +1,13 @@
 """Model 2 (Instance-based / Non-parametric Baseline): Distance-Weighted KNN for Candidate Road Segment Classification.
 
 Trains a Distance-Weighted K-Nearest Neighbors classifier (`n_neighbors=15`, `weights='distance'`,
-`algorithm='kd_tree'`) on `StandardScaler`-normalized spatial features fit strictly inside each
+`algorithm='brute'`) on `StandardScaler`-normalized v2 features fit strictly inside each
 5-fold `GroupKFold` training split (grouped by `trip_id` across the 80 training trips) and
 evaluates on the 10 `student_test` trips.
 
-Uses deterministic subsampling of the training index (`max_train_samples=150_000` with
-`random_state=42`) to bound KD-tree memory and query latency while preserving positive/negative class
-structure across all 80 training trips.
+Uses deterministic observation-grouped subsampling of the training index (`max_train_samples=16_000`
+with `random_state=42`, corresponding to 2,000 complete 8-candidate GPS observations) so BLAS-accelerated
+21D Euclidean neighbor queries complete rapidly while preserving positive/negative candidate ratios.
 
 Outputs:
 - `outputs/models/classical/knn_metrics.json`
@@ -42,24 +42,20 @@ PREDS_PARQUET_PATH = OUTPUT_DIR / "knn_student_test_preds.parquet"
 KNN_HYPERPARAMETERS: dict[str, Any] = {
     "n_neighbors": 15,
     "weights": "distance",
-    "algorithm": "kd_tree",
-    "leaf_size": 40,
-    "metric": "minkowski",
-    "p": 2,
-    "max_train_samples": 150000,
+    "algorithm": "brute",
+    "metric": "euclidean",
+    "max_train_samples": 16000,
     "random_state": 42,
 }
 
 
 def build_knn_estimator() -> KNeighborsClassifier:
-    """Create a fresh KNeighborsClassifier instance with distance weighting and KD-tree indexing."""
+    """Create a fresh KNeighborsClassifier instance with distance weighting and BLAS Euclidean distance."""
     return KNeighborsClassifier(
         n_neighbors=KNN_HYPERPARAMETERS["n_neighbors"],
         weights=KNN_HYPERPARAMETERS["weights"],
         algorithm=KNN_HYPERPARAMETERS["algorithm"],
-        leaf_size=KNN_HYPERPARAMETERS["leaf_size"],
         metric=KNN_HYPERPARAMETERS["metric"],
-        p=KNN_HYPERPARAMETERS["p"],
     )
 
 

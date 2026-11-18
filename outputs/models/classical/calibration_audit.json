@@ -1,0 +1,429 @@
+{
+  "schema_verification": {
+    "logreg": {
+      "parquet_path": "/Users/pavankishorm/Documents/My Projects/ML-Hackathon/outputs/models/classical/logreg_student_test_preds.parquet",
+      "columns": [
+        "trip_id",
+        "obs_idx",
+        "arc_id",
+        "is_match",
+        "pred_prob"
+      ],
+      "num_rows": 153280,
+      "num_trips": 10,
+      "num_observations": 19160,
+      "null_count": 0,
+      "prob_min": 0.0,
+      "prob_max": 0.999053,
+      "schema_valid": true
+    },
+    "knn": {
+      "parquet_path": "/Users/pavankishorm/Documents/My Projects/ML-Hackathon/outputs/models/classical/knn_student_test_preds.parquet",
+      "columns": [
+        "trip_id",
+        "obs_idx",
+        "arc_id",
+        "is_match",
+        "pred_prob"
+      ],
+      "num_rows": 153280,
+      "num_trips": 10,
+      "num_observations": 19160,
+      "null_count": 0,
+      "prob_min": 0.0,
+      "prob_max": 1.0,
+      "schema_valid": true
+    },
+    "rf": {
+      "parquet_path": "/Users/pavankishorm/Documents/My Projects/ML-Hackathon/outputs/models/classical/rf_student_test_preds.parquet",
+      "columns": [
+        "trip_id",
+        "obs_idx",
+        "arc_id",
+        "is_match",
+        "pred_prob"
+      ],
+      "num_rows": 153280,
+      "num_trips": 10,
+      "num_observations": 19160,
+      "null_count": 0,
+      "prob_min": 2.8e-05,
+      "prob_max": 0.999113,
+      "schema_valid": true
+    }
+  },
+  "models": {
+    "logreg": {
+      "model_name": "Logistic Regression",
+      "algorithm_family": "Linear / Probabilistic",
+      "top1_accuracy": 0.743319,
+      "top3_accuracy": 0.947965,
+      "macro_f1": 0.746817,
+      "binary_f1": 0.592668,
+      "precision": 0.435508,
+      "recall": 0.927296,
+      "log_loss": 0.348934,
+      "brier_score": 0.111732,
+      "ece": 0.177217,
+      "mce": 0.466402,
+      "mean_predicted_prob": 0.302217,
+      "empirical_positive_rate": 0.125,
+      "overconfidence_bias": 0.177217,
+      "mean_prob_on_true_match": 0.827997,
+      "mean_prob_on_non_match": 0.227105,
+      "prob_discrimination_ratio": 3.6459,
+      "reliability_bins": [
+        {
+          "bin_idx": 0,
+          "bin_lower": 0.0,
+          "bin_upper": 0.1,
+          "count": 63931,
+          "proportion_of_samples": 0.417086,
+          "mean_predicted_prob": 0.028773,
+          "empirical_positive_rate": 0.001533,
+          "abs_calibration_gap": 0.02724
+        },
+        {
+          "bin_idx": 1,
+          "bin_lower": 0.1,
+          "bin_upper": 0.2,
+          "count": 18390,
+          "proportion_of_samples": 0.119977,
+          "mean_predicted_prob": 0.145299,
+          "empirical_positive_rate": 0.010277,
+          "abs_calibration_gap": 0.135022
+        },
+        {
+          "bin_idx": 2,
+          "bin_lower": 0.2,
+          "bin_upper": 0.3,
+          "count": 12319,
+          "proportion_of_samples": 0.080369,
+          "mean_predicted_prob": 0.247868,
+          "empirical_positive_rate": 0.02208,
+          "abs_calibration_gap": 0.225788
+        },
+        {
+          "bin_idx": 3,
+          "bin_lower": 0.3,
+          "bin_upper": 0.4,
+          "count": 9981,
+          "proportion_of_samples": 0.065116,
+          "mean_predicted_prob": 0.348081,
+          "empirical_positive_rate": 0.035167,
+          "abs_calibration_gap": 0.312915
+        },
+        {
+          "bin_idx": 4,
+          "bin_lower": 0.4,
+          "bin_upper": 0.5,
+          "count": 7863,
+          "proportion_of_samples": 0.051298,
+          "mean_predicted_prob": 0.448623,
+          "empirical_positive_rate": 0.061427,
+          "abs_calibration_gap": 0.387196
+        },
+        {
+          "bin_idx": 5,
+          "bin_lower": 0.5,
+          "bin_upper": 0.6,
+          "count": 6961,
+          "proportion_of_samples": 0.045414,
+          "mean_predicted_prob": 0.548792,
+          "empirical_positive_rate": 0.103577,
+          "abs_calibration_gap": 0.445214
+        },
+        {
+          "bin_idx": 6,
+          "bin_lower": 0.6,
+          "bin_upper": 0.7,
+          "count": 6566,
+          "proportion_of_samples": 0.042837,
+          "mean_predicted_prob": 0.648857,
+          "empirical_positive_rate": 0.182455,
+          "abs_calibration_gap": 0.466402
+        },
+        {
+          "bin_idx": 7,
+          "bin_lower": 0.7,
+          "bin_upper": 0.8,
+          "count": 6709,
+          "proportion_of_samples": 0.04377,
+          "mean_predicted_prob": 0.750699,
+          "empirical_positive_rate": 0.284692,
+          "abs_calibration_gap": 0.466007
+        },
+        {
+          "bin_idx": 8,
+          "bin_lower": 0.8,
+          "bin_upper": 0.9,
+          "count": 8386,
+          "proportion_of_samples": 0.05471,
+          "mean_predicted_prob": 0.855002,
+          "empirical_positive_rate": 0.517768,
+          "abs_calibration_gap": 0.337234
+        },
+        {
+          "bin_idx": 9,
+          "bin_lower": 0.9,
+          "bin_upper": 1.0,
+          "count": 12174,
+          "proportion_of_samples": 0.079423,
+          "mean_predicted_prob": 0.942175,
+          "empirical_positive_rate": 0.788237,
+          "abs_calibration_gap": 0.153938
+        }
+      ]
+    },
+    "knn": {
+      "model_name": "Distance-Weighted KNN",
+      "algorithm_family": "Instance-based / Non-parametric",
+      "top1_accuracy": 0.773591,
+      "top3_accuracy": 0.951618,
+      "macro_f1": 0.852992,
+      "binary_f1": 0.740714,
+      "precision": 0.786523,
+      "recall": 0.699948,
+      "log_loss": 0.311686,
+      "brier_score": 0.044632,
+      "ece": 0.011396,
+      "mce": 0.055578,
+      "mean_predicted_prob": 0.127531,
+      "empirical_positive_rate": 0.125,
+      "overconfidence_bias": 0.002531,
+      "mean_prob_on_true_match": 0.654445,
+      "mean_prob_on_non_match": 0.052258,
+      "prob_discrimination_ratio": 12.5234,
+      "reliability_bins": [
+        {
+          "bin_idx": 0,
+          "bin_lower": 0.0,
+          "bin_upper": 0.1,
+          "count": 115441,
+          "proportion_of_samples": 0.753138,
+          "mean_predicted_prob": 0.007487,
+          "empirical_positive_rate": 0.011694,
+          "abs_calibration_gap": 0.004207
+        },
+        {
+          "bin_idx": 1,
+          "bin_lower": 0.1,
+          "bin_upper": 0.2,
+          "count": 9459,
+          "proportion_of_samples": 0.061711,
+          "mean_predicted_prob": 0.145192,
+          "empirical_positive_rate": 0.102231,
+          "abs_calibration_gap": 0.042961
+        },
+        {
+          "bin_idx": 2,
+          "bin_lower": 0.2,
+          "bin_upper": 0.3,
+          "count": 4653,
+          "proportion_of_samples": 0.030356,
+          "mean_predicted_prob": 0.247555,
+          "empirical_positive_rate": 0.195143,
+          "abs_calibration_gap": 0.052412
+        },
+        {
+          "bin_idx": 3,
+          "bin_lower": 0.3,
+          "bin_upper": 0.4,
+          "count": 3565,
+          "proportion_of_samples": 0.023258,
+          "mean_predicted_prob": 0.349363,
+          "empirical_positive_rate": 0.314727,
+          "abs_calibration_gap": 0.034637
+        },
+        {
+          "bin_idx": 4,
+          "bin_lower": 0.4,
+          "bin_upper": 0.5,
+          "count": 3111,
+          "proportion_of_samples": 0.020296,
+          "mean_predicted_prob": 0.449499,
+          "empirical_positive_rate": 0.450659,
+          "abs_calibration_gap": 0.00116
+        },
+        {
+          "bin_idx": 5,
+          "bin_lower": 0.5,
+          "bin_upper": 0.6,
+          "count": 2780,
+          "proportion_of_samples": 0.018137,
+          "mean_predicted_prob": 0.550542,
+          "empirical_positive_rate": 0.494964,
+          "abs_calibration_gap": 0.055578
+        },
+        {
+          "bin_idx": 6,
+          "bin_lower": 0.6,
+          "bin_upper": 0.7,
+          "count": 2795,
+          "proportion_of_samples": 0.018235,
+          "mean_predicted_prob": 0.649426,
+          "empirical_positive_rate": 0.623256,
+          "abs_calibration_gap": 0.02617
+        },
+        {
+          "bin_idx": 7,
+          "bin_lower": 0.7,
+          "bin_upper": 0.8,
+          "count": 2548,
+          "proportion_of_samples": 0.016623,
+          "mean_predicted_prob": 0.751656,
+          "empirical_positive_rate": 0.771586,
+          "abs_calibration_gap": 0.019929
+        },
+        {
+          "bin_idx": 8,
+          "bin_lower": 0.8,
+          "bin_upper": 0.9,
+          "count": 3502,
+          "proportion_of_samples": 0.022847,
+          "mean_predicted_prob": 0.850825,
+          "empirical_positive_rate": 0.890634,
+          "abs_calibration_gap": 0.039809
+        },
+        {
+          "bin_idx": 9,
+          "bin_lower": 0.9,
+          "bin_upper": 1.0,
+          "count": 5426,
+          "proportion_of_samples": 0.035399,
+          "mean_predicted_prob": 0.971983,
+          "empirical_positive_rate": 0.959823,
+          "abs_calibration_gap": 0.01216
+        }
+      ]
+    },
+    "rf": {
+      "model_name": "Random Forest",
+      "algorithm_family": "Bagging / Tree Ensemble",
+      "top1_accuracy": 0.84739,
+      "top3_accuracy": 0.979697,
+      "macro_f1": 0.893748,
+      "binary_f1": 0.81774,
+      "precision": 0.729015,
+      "recall": 0.931054,
+      "log_loss": 0.144121,
+      "brier_score": 0.040275,
+      "ece": 0.063436,
+      "mce": 0.362061,
+      "mean_predicted_prob": 0.188436,
+      "empirical_positive_rate": 0.125,
+      "overconfidence_bias": 0.063436,
+      "mean_prob_on_true_match": 0.892999,
+      "mean_prob_on_non_match": 0.087784,
+      "prob_discrimination_ratio": 10.1726,
+      "reliability_bins": [
+        {
+          "bin_idx": 0,
+          "bin_lower": 0.0,
+          "bin_upper": 0.1,
+          "count": 104637,
+          "proportion_of_samples": 0.682653,
+          "mean_predicted_prob": 0.018742,
+          "empirical_positive_rate": 0.00195,
+          "abs_calibration_gap": 0.016793
+        },
+        {
+          "bin_idx": 1,
+          "bin_lower": 0.1,
+          "bin_upper": 0.2,
+          "count": 13755,
+          "proportion_of_samples": 0.089738,
+          "mean_predicted_prob": 0.140995,
+          "empirical_positive_rate": 0.014395,
+          "abs_calibration_gap": 0.126601
+        },
+        {
+          "bin_idx": 2,
+          "bin_lower": 0.2,
+          "bin_upper": 0.3,
+          "count": 5176,
+          "proportion_of_samples": 0.033768,
+          "mean_predicted_prob": 0.243685,
+          "empirical_positive_rate": 0.049652,
+          "abs_calibration_gap": 0.194033
+        },
+        {
+          "bin_idx": 3,
+          "bin_lower": 0.3,
+          "bin_upper": 0.4,
+          "count": 2825,
+          "proportion_of_samples": 0.01843,
+          "mean_predicted_prob": 0.347962,
+          "empirical_positive_rate": 0.098053,
+          "abs_calibration_gap": 0.249909
+        },
+        {
+          "bin_idx": 4,
+          "bin_lower": 0.4,
+          "bin_upper": 0.5,
+          "count": 2417,
+          "proportion_of_samples": 0.015769,
+          "mean_predicted_prob": 0.448434,
+          "empirical_positive_rate": 0.159288,
+          "abs_calibration_gap": 0.289146
+        },
+        {
+          "bin_idx": 5,
+          "bin_lower": 0.5,
+          "bin_upper": 0.6,
+          "count": 2128,
+          "proportion_of_samples": 0.013883,
+          "mean_predicted_prob": 0.55005,
+          "empirical_positive_rate": 0.235432,
+          "abs_calibration_gap": 0.314618
+        },
+        {
+          "bin_idx": 6,
+          "bin_lower": 0.6,
+          "bin_upper": 0.7,
+          "count": 1969,
+          "proportion_of_samples": 0.012846,
+          "mean_predicted_prob": 0.649922,
+          "empirical_positive_rate": 0.35094,
+          "abs_calibration_gap": 0.298982
+        },
+        {
+          "bin_idx": 7,
+          "bin_lower": 0.7,
+          "bin_upper": 0.8,
+          "count": 1933,
+          "proportion_of_samples": 0.012611,
+          "mean_predicted_prob": 0.751094,
+          "empirical_positive_rate": 0.389033,
+          "abs_calibration_gap": 0.362061
+        },
+        {
+          "bin_idx": 8,
+          "bin_lower": 0.8,
+          "bin_upper": 0.9,
+          "count": 2176,
+          "proportion_of_samples": 0.014196,
+          "mean_predicted_prob": 0.853259,
+          "empirical_positive_rate": 0.511489,
+          "abs_calibration_gap": 0.34177
+        },
+        {
+          "bin_idx": 9,
+          "bin_lower": 0.9,
+          "bin_upper": 1.0,
+          "count": 16264,
+          "proportion_of_samples": 0.106106,
+          "mean_predicted_prob": 0.977378,
+          "empirical_positive_rate": 0.908879,
+          "abs_calibration_gap": 0.068499
+        }
+      ]
+    }
+  },
+  "hmm_emission_readiness_recommendation": {
+    "best_calibrated_model": "Random Forest",
+    "highest_top1_model": "Random Forest",
+    "highest_macro_f1_model": "Random Forest",
+    "notes": "Class-balanced models (Logistic Regression and Random Forest with class_weight='balanced*') shift mean predicted probabilities upward (~0.32\u20130.38 vs 0.125 base rate) to maximize recall on the 1:7 imbalanced candidate pool. When used as emission likelihoods in Viterbi decoding, dividing by prior class weights or applying log-odds scaling restores exact Bayesian emission calibration while preserving their superior candidate ranking."
+  }
+}

@@ -1,10 +1,11 @@
-"""Data loading and self-contained v1 spatial candidate feature builder for Person 2 classical models.
+"""Data loading and self-contained v2 spatial, kinematic, context, and topological feature builder.
 
 Loads `data/processed/train_features.parquet` and `data/processed/student_test_features.parquet`
-(plus `artifacts/feature_columns.json` when available). If Person 1's processed parquets are not
-yet present on disk, builds the v1 spatial candidate feature tables directly from the 80 training
-trips (`Student folder/train/`) and 10 development test trips (`Student folder/student_test/`) and
-caches them to `data/processed/*.parquet` (which is gitignored, preserving strict branch isolation).
+(plus `artifacts/feature_columns.json` when available). If Person 1's v2 feature parquets are not
+yet present on disk (or only contain v1 columns), builds the 21 v2 domain features directly from
+the 80 training trips (`Student folder/train/`) and 10 development test trips
+(`Student folder/student_test/`) using ONLY `.track`, `.nodes`, and `.arcs` for feature computation
+(zero ground-truth `.route` leakage) and caches them to `data/processed/*.parquet` (gitignored).
 """
 
 from __future__ import annotations
@@ -43,6 +44,34 @@ V1_SPATIAL_FEATURE_COLUMNS: list[str] = [
     "arc_length_m",
     "cand_dist_diff_from_min_m",
     "cand_dist_ratio",
+]
+
+V2_FEATURE_COLUMNS: list[str] = [
+    # Spatial (v1 core)
+    "dist_to_arc_m",
+    "dist_to_start_node_m",
+    "dist_to_end_node_m",
+    "proj_fraction_t",
+    "arc_length_m",
+    "cand_dist_diff_from_min_m",
+    "cand_dist_ratio",
+    # Kinematic (v2)
+    "dt_sec",
+    "gps_gap_flag",
+    "gps_speed_mps",
+    "gps_accel_mps2",
+    "heading_diff_deg",
+    "heading_diff_cos",
+    # Relative / Observation Context (v2)
+    "cand_dist_zscore",
+    "cands_within_15m",
+    "cands_within_30m",
+    "neighbor_arc_continuity",
+    # Road-Graph Topological (v2)
+    "from_node_out_degree",
+    "to_node_in_degree",
+    "is_bidirectional_arc",
+    "local_road_density_30m",
 ]
 
 
@@ -92,6 +121,68 @@ def _point_to_segments_geometry(
     return dist_to_arc_m, dist_to_start_m, dist_to_end_m, proj_t, arc_len_m
 
 
+def _compute_gps_kinematics(
+    obs_x: np.ndarray,
+    obs_y: np.ndarray,
+    timestamps: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Compute GPS time delta, gap indicator, speed, acceleration, and smoothed unit velocity (vx, vy)."""
+    n_obs = len(obs_x)
+    dt = np.ones(n_obs, dtype=np.float64)
+    if n_obs > 1:
+        dt[1:] = np.maximum(timestamps[1:] - timestamps[:-1], 1e-3)
+        dt[0] = dt[1]
+
+    gps_gap_flag = (dt > 2.0).astype(np.float32)
+
+    # Central difference displacement for smoothed heading & speed
+    dx_step = np.zeros(n_obs, dtype=np.float64)
+    dy_step = np.zeros(n_obs, dtype=np.float64)
+    if n_obs > 1:
+        dx_step[1:] = obs_x[1:] - obs_x[:-1]
+        dy_step[1:] = obs_y[1:] - obs_y[:-1]
+        dx_step[0] = dx_step[1]
+        dy_step[0] = dy_step[1]
+
+    step_dist = np.sqrt(dx_step ** 2 + dy_step ** 2)
+    speed_mps = np.clip(step_dist / dt, 0.0, 60.0)
+
+    accel_mps2 = np.zeros(n_obs, dtype=np.float64)
+    if n_obs > 1:
+        accel_mps2[1:] = np.clip((speed_mps[1:] - speed_mps[:-1]) / dt[1:], -25.0, 25.0)
+        accel_mps2[0] = accel_mps2[1]
+
+    # Smoothed heading vector using 3-point window (prev -> next)
+    hx = np.zeros(n_obs, dtype=np.float64)
+    hy = np.zeros(n_obs, dtype=np.float64)
+    if n_obs >= 3:
+        hx[1:-1] = obs_x[2:] - obs_x[:-2]
+        hy[1:-1] = obs_y[2:] - obs_y[:-2]
+        hx[0], hy[0] = obs_x[1] - obs_x[0], obs_y[1] - obs_y[0]
+        hx[-1], hy[-1] = obs_x[-1] - obs_x[-2], obs_y[-1] - obs_y[-2]
+    elif n_obs == 2:
+        hx[:] = obs_x[1] - obs_x[0]
+        hy[:] = obs_y[1] - obs_y[0]
+
+    h_norm = np.sqrt(hx * hx + hy * hy)
+    # Forward-fill heading when stationary
+    for i in range(1, n_obs):
+        if h_norm[i] < 0.25 and h_norm[i - 1] >= 0.25:
+            hx[i], hy[i], h_norm[i] = hx[i - 1], hy[i - 1], h_norm[i - 1]
+    safe_norm = np.where(h_norm > 1e-9, h_norm, 1.0)
+    uvx = np.where(h_norm > 1e-9, hx / safe_norm, 0.0)
+    uvy = np.where(h_norm > 1e-9, hy / safe_norm, 0.0)
+
+    return (
+        dt.astype(np.float32),
+        gps_gap_flag,
+        speed_mps.astype(np.float32),
+        accel_mps2.astype(np.float32),
+        uvx,
+        uvy,
+    )
+
+
 def _align_gps_to_ground_truth_route(
     obs_x: np.ndarray,
     obs_y: np.ndarray,
@@ -127,7 +218,7 @@ def _build_single_trip_candidates(
     top_k: int = 8,
     midpoint_pool_k: int = 24,
 ) -> pd.DataFrame:
-    """Extract top-K candidate road segments and v1 spatial features for one trip folder."""
+    """Extract top-K candidate road segments and 21 v2 features for one trip folder."""
     trip_id = trip_dir.name
     track = np.loadtxt(trip_dir / f"{trip_id}.track", dtype=np.float64)
     nodes = np.loadtxt(trip_dir / f"{trip_id}.nodes", dtype=np.float64)
@@ -140,6 +231,8 @@ def _build_single_trip_candidates(
         arcs = arcs.reshape(1, -1)
     route = np.atleast_1d(route).astype(np.int64)
 
+    n_nodes = len(nodes)
+    n_arcs = len(arcs)
     lon0 = float(np.mean(track[:, 0]))
     lat0 = float(np.mean(track[:, 1]))
 
@@ -153,15 +246,28 @@ def _build_single_trip_candidates(
     bx_all = node_x[to_nodes]
     by_all = node_y[to_nodes]
 
+    # Road-graph topological statistics (computed strictly from .arcs)
+    out_degree = np.bincount(from_nodes, minlength=n_nodes).astype(np.float32)
+    in_degree = np.bincount(to_nodes, minlength=n_nodes).astype(np.float32)
+
+    edge_keys = from_nodes.astype(np.int64) * n_nodes + to_nodes.astype(np.int64)
+    rev_keys = to_nodes.astype(np.int64) * n_nodes + from_nodes.astype(np.int64)
+    sorted_keys = np.sort(edge_keys)
+    idx_in_sorted = np.searchsorted(sorted_keys, rev_keys)
+    idx_clipped = np.clip(idx_in_sorted, 0, len(sorted_keys) - 1)
+    is_bidir_all = (sorted_keys[idx_clipped] == rev_keys).astype(np.float32)
+
+    # Align ground-truth route labels
     gt_arc_per_obs = _align_gps_to_ground_truth_route(
         obs_x, obs_y, ax_all, ay_all, bx_all, by_all, route
     )
 
+    # Spatial candidate retrieval via cKDTree
     mid_x = 0.5 * (ax_all + bx_all)
     mid_y = 0.5 * (ay_all + by_all)
     tree = cKDTree(np.column_stack([mid_x, mid_y]))
 
-    pool_k = min(midpoint_pool_k, len(arcs))
+    pool_k = min(midpoint_pool_k, n_arcs)
     _, pool_arc_ids = tree.query(np.column_stack([obs_x, obs_y]), k=pool_k)
     if pool_arc_ids.ndim == 1:
         pool_arc_ids = pool_arc_ids[:, None]
@@ -174,6 +280,7 @@ def _build_single_trip_candidates(
     pool_dist, _, _, _, _ = _point_to_segments_geometry(
         obs_x[:, None], obs_y[:, None], p_ax, p_ay, p_bx, p_by
     )
+    local_density_30m = np.sum(pool_dist <= 30.0, axis=1, keepdims=True).astype(np.float32)
 
     k_eff = min(top_k, pool_k)
     order = np.argsort(pool_dist, axis=1)[:, :k_eff]
@@ -202,11 +309,76 @@ def _build_single_trip_candidates(
     proj_t = proj_t[row_idx, final_order]
     arc_len_m = arc_len_m[row_idx, final_order]
 
+    # Re-index candidate coordinates after final sort
+    c_ax = ax_all[cand_arc_ids]
+    c_ay = ay_all[cand_arc_ids]
+    c_bx = bx_all[cand_arc_ids]
+    c_by = by_all[cand_arc_ids]
+    c_from = from_nodes[cand_arc_ids]
+    c_to = to_nodes[cand_arc_ids]
+
+    # Relative / context features per observation
     min_dist_m = dist_to_arc_m[:, [0]]
     cand_dist_diff_m = dist_to_arc_m - min_dist_m
     cand_dist_ratio = dist_to_arc_m / (min_dist_m + 1.0)
 
+    mean_dist_m = np.mean(dist_to_arc_m, axis=1, keepdims=True)
+    std_dist_m = np.maximum(np.std(dist_to_arc_m, axis=1, keepdims=True), 1e-3)
+    cand_dist_zscore = (dist_to_arc_m - mean_dist_m) / std_dist_m
+
+    cands_15m = np.broadcast_to(
+        np.sum(dist_to_arc_m <= 15.0, axis=1, keepdims=True).astype(np.float32),
+        dist_to_arc_m.shape,
+    )
+    cands_30m = np.broadcast_to(
+        np.sum(dist_to_arc_m <= 30.0, axis=1, keepdims=True).astype(np.float32),
+        dist_to_arc_m.shape,
+    )
+    road_density_grid = np.broadcast_to(local_density_30m, dist_to_arc_m.shape)
+
+    # Neighbor observation topological/arc continuity score (in [0, 1])
+    # Checks if candidate arc matches or shares a node with prev/next observation's top-2 closest arcs
     n_obs = len(obs_x)
+    continuity = np.zeros_like(dist_to_arc_m, dtype=np.float32)
+    if n_obs > 1:
+        prev_top_arc = np.roll(cand_arc_ids[:, 0], 1)
+        prev_top_to = np.roll(c_to[:, 0], 1)
+        prev_top_arc[0] = cand_arc_ids[0, 0]
+        prev_top_to[0] = c_to[0, 0]
+
+        next_top_arc = np.roll(cand_arc_ids[:, 0], -1)
+        next_top_from = np.roll(c_from[:, 0], -1)
+        next_top_arc[-1] = cand_arc_ids[-1, 0]
+        next_top_from[-1] = c_from[-1, 0]
+
+        prev_connected = (
+            (cand_arc_ids == prev_top_arc[:, None])
+            | (c_from == prev_top_to[:, None])
+        ).astype(np.float32)
+        next_connected = (
+            (cand_arc_ids == next_top_arc[:, None])
+            | (c_to == next_top_from[:, None])
+        ).astype(np.float32)
+        continuity = 0.5 * (prev_connected + next_connected)
+
+    # Kinematic features & angular alignment between GPS trajectory vector and directed arc vector
+    dt_sec, gps_gap_flag, speed_mps, accel_mps2, uvx, uvy = _compute_gps_kinematics(
+        obs_x, obs_y, track[:, 2]
+    )
+    arc_dx = c_bx - c_ax
+    arc_dy = c_by - c_ay
+    safe_arc_len = np.where(arc_len_m > 1e-9, arc_len_m, 1.0)
+    uax = np.where(arc_len_m > 1e-9, arc_dx / safe_arc_len, 0.0)
+    uay = np.where(arc_len_m > 1e-9, arc_dy / safe_arc_len, 0.0)
+
+    heading_cos = np.clip(uvx[:, None] * uax + uvy[:, None] * uay, -1.0, 1.0)
+    heading_deg = np.degrees(np.arccos(heading_cos))
+
+    # Topological node degree & bidirectionality features per candidate arc
+    cand_out_deg = out_degree[c_from]
+    cand_in_deg = in_degree[c_to]
+    cand_bidir = is_bidir_all[cand_arc_ids]
+
     obs_idx_grid = np.repeat(np.arange(n_obs, dtype=np.int64), k_eff)
     timestamps_grid = np.repeat(track[:, 2].astype(np.float64), k_eff)
     cand_rank_grid = np.tile(np.arange(k_eff, dtype=np.int64), n_obs)
@@ -222,6 +394,7 @@ def _build_single_trip_candidates(
             "arc_id": flat_arc_ids,
             "cand_rank": cand_rank_grid,
             "is_match": is_match,
+            # Spatial (7)
             "dist_to_arc_m": dist_to_arc_m.reshape(-1).astype(np.float32),
             "dist_to_start_node_m": dist_start_m.reshape(-1).astype(np.float32),
             "dist_to_end_node_m": dist_end_m.reshape(-1).astype(np.float32),
@@ -229,6 +402,23 @@ def _build_single_trip_candidates(
             "arc_length_m": arc_len_m.reshape(-1).astype(np.float32),
             "cand_dist_diff_from_min_m": cand_dist_diff_m.reshape(-1).astype(np.float32),
             "cand_dist_ratio": cand_dist_ratio.reshape(-1).astype(np.float32),
+            # Kinematic (6)
+            "dt_sec": np.repeat(dt_sec, k_eff).astype(np.float32),
+            "gps_gap_flag": np.repeat(gps_gap_flag, k_eff).astype(np.float32),
+            "gps_speed_mps": np.repeat(speed_mps, k_eff).astype(np.float32),
+            "gps_accel_mps2": np.repeat(accel_mps2, k_eff).astype(np.float32),
+            "heading_diff_deg": heading_deg.reshape(-1).astype(np.float32),
+            "heading_diff_cos": heading_cos.reshape(-1).astype(np.float32),
+            # Relative / Context (4)
+            "cand_dist_zscore": cand_dist_zscore.reshape(-1).astype(np.float32),
+            "cands_within_15m": cands_15m.reshape(-1).astype(np.float32),
+            "cands_within_30m": cands_30m.reshape(-1).astype(np.float32),
+            "neighbor_arc_continuity": continuity.reshape(-1).astype(np.float32),
+            # Topological (4)
+            "from_node_out_degree": cand_out_deg.reshape(-1).astype(np.float32),
+            "to_node_in_degree": cand_in_deg.reshape(-1).astype(np.float32),
+            "is_bidirectional_arc": cand_bidir.reshape(-1).astype(np.float32),
+            "local_road_density_30m": road_density_grid.reshape(-1).astype(np.float32),
         }
     )
 
@@ -238,7 +428,7 @@ def build_split_feature_parquet(
     output_parquet: Path,
     top_k: int = 8,
 ) -> pd.DataFrame:
-    """Build v1 candidate features across all trips in `split_dir` and save to `output_parquet`."""
+    """Build v2 candidate features across all trips in `split_dir` and save to `output_parquet`."""
     trip_dirs = sorted([d for d in split_dir.iterdir() if d.is_dir()])
     if not trip_dirs:
         raise FileNotFoundError(f"No trip folders found in {split_dir}")
@@ -247,7 +437,7 @@ def build_split_feature_parquet(
     for idx, trip_dir in enumerate(trip_dirs, start=1):
         frames.append(_build_single_trip_candidates(trip_dir, top_k=top_k))
         if idx % 20 == 0 or idx == len(trip_dirs):
-            print(f"  Built v1 features for {idx}/{len(trip_dirs)} trips in '{split_dir.name}'...")
+            print(f"  Built v2 features for {idx}/{len(trip_dirs)} trips in '{split_dir.name}'...")
 
     df = pd.concat(frames, ignore_index=True)
     output_parquet.parent.mkdir(parents=True, exist_ok=True)
@@ -260,20 +450,40 @@ def load_feature_datasets(
     test_parquet: Path | str = DEFAULT_TEST_PARQUET,
     feature_cols_json: Path | str = DEFAULT_FEATURE_COLS_JSON,
     top_k: int = 8,
+    require_v2: bool = True,
 ) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
-    """Load `train_features.parquet`, `student_test_features.parquet`, and feature column names."""
+    """Load `train_features.parquet`, `student_test_features.parquet`, and feature column names.
+
+    If `require_v2=True` and the existing cached parquets only have v1 columns (and no external
+    `artifacts/feature_columns.json` overrides them), automatically rebuilds the 21 v2 features.
+    """
     train_path = Path(train_parquet)
     test_path = Path(test_parquet)
     feat_json_path = Path(feature_cols_json)
 
-    if not train_path.exists():
-        print(f"[data_utils] '{train_path}' not found; building v1 features from {DEFAULT_RAW_TRAIN_DIR}...")
+    rebuild_train = not train_path.exists()
+    rebuild_test = not test_path.exists()
+
+    if not rebuild_train and require_v2 and not feat_json_path.exists():
+        existing_cols = set(pd.read_parquet(train_path, columns=None).columns)
+        if not set(V2_FEATURE_COLUMNS).issubset(existing_cols):
+            print("[data_utils] Upgrading cached train_features.parquet from v1 to 21 v2 features...")
+            rebuild_train = True
+
+    if not rebuild_test and require_v2 and not feat_json_path.exists():
+        existing_cols = set(pd.read_parquet(test_path, columns=None).columns)
+        if not set(V2_FEATURE_COLUMNS).issubset(existing_cols):
+            print("[data_utils] Upgrading cached student_test_features.parquet from v1 to 21 v2 features...")
+            rebuild_test = True
+
+    if rebuild_train:
+        print(f"[data_utils] Building v2 features from {DEFAULT_RAW_TRAIN_DIR}...")
         train_df = build_split_feature_parquet(DEFAULT_RAW_TRAIN_DIR, train_path, top_k=top_k)
     else:
         train_df = pd.read_parquet(train_path)
 
-    if not test_path.exists():
-        print(f"[data_utils] '{test_path}' not found; building v1 features from {DEFAULT_RAW_TEST_DIR}...")
+    if rebuild_test:
+        print(f"[data_utils] Building v2 features from {DEFAULT_RAW_TEST_DIR}...")
         test_df = build_split_feature_parquet(DEFAULT_RAW_TEST_DIR, test_path, top_k=top_k)
     else:
         test_df = pd.read_parquet(test_path)
