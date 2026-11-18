@@ -1,0 +1,204 @@
+{
+  "train": {
+    "n_trips": 80,
+    "total_gps_points": 208417,
+    "gps_points_per_trip": {
+      "min": 361.0,
+      "p25": 945.75,
+      "median": 1529.0,
+      "mean": 2605.2125,
+      "p75": 2792.75,
+      "max": 19313.0
+    },
+    "route_arcs_per_trip": {
+      "min": 59.0,
+      "p25": 168.25,
+      "median": 280.0,
+      "mean": 391.7,
+      "p75": 480.5,
+      "max": 2266.0
+    },
+    "nodes_per_trip": {
+      "min": 299.0,
+      "p25": 3487.75,
+      "median": 9608.0,
+      "mean": 24168.5625,
+      "p75": 28846.75,
+      "max": 155003.0
+    },
+    "arcs_per_trip": {
+      "min": 649.0,
+      "p25": 7061.75,
+      "median": 19526.5,
+      "mean": 48461.3,
+      "p75": 58003.25,
+      "max": 307392.0
+    },
+    "trajectory_length_m": {
+      "min": 6340.893648422098,
+      "p25": 12802.856825545528,
+      "median": 24038.445623250213,
+      "mean": 37273.564782474896,
+      "p75": 48809.351720781415,
+      "max": 169586.59779052396
+    },
+    "duration_s": {
+      "min": 451.0,
+      "p25": 1225.3,
+      "median": 1710.0014999999999,
+      "mean": 5680.404487500001,
+      "p75": 3765.0,
+      "max": 154030.0
+    },
+    "sampling_interval": {
+      "n_intervals": 208337,
+      "frac_eq_1s": 0.9650134157638826,
+      "frac_le_1s": 0.965027815510447,
+      "frac_gt_2s": 0.014097351886606796,
+      "frac_gt_10s": 0.0028319501576772248,
+      "n_gt_2s": 2937,
+      "n_gt_10s": 590,
+      "max_gap_s": 153064.0,
+      "median_s": 1.0,
+      "value_counts_top": {
+        "1.0": 201048,
+        "2.0": 4335,
+        "3.0": 1061,
+        "4.0": 407,
+        "5.0": 252,
+        "6.0": 218,
+        "7.0": 154,
+        "8.0": 105
+      }
+    },
+    "data_quality": {
+      "trips_with_nan_rows": 0,
+      "trips_with_invalid_coords": 0,
+      "duplicate_timestamps_total": 0,
+      "non_monotonic_timestamps_total": 0,
+      "trips_missing_route_file": 0,
+      "trips_with_out_of_range_arcs": 0,
+      "trips_with_out_of_range_route": 0,
+      "trips_with_gaps_gt2s": 50,
+      "trips_with_gaps_gt10s": 40,
+      "route_fully_continuous_trips": 70,
+      "trips_with_repeated_route_arcs": 9
+    },
+    "bounding_box_overall": {
+      "lon_min": -100.418538,
+      "lon_max": 137.237029,
+      "lat_min": -34.640291,
+      "lat_max": 61.267258
+    },
+    "road_graph": {
+      "nodes_total": 1933485,
+      "arcs_total": 3876904,
+      "max_nodes_trip": 155003,
+      "max_arcs_trip": 307392,
+      "trips_single_weak_component": 1,
+      "median_largest_weak_frac": 0.9810660720777296,
+      "median_largest_strong_frac": 0.9641911601989523,
+      "median_mean_out_degree": 2.0302539292458253,
+      "median_frac_arcs_with_reverse": 0.9511203120769942
+    }
+  },
+  "student_test": {
+    "n_trips": 10,
+    "total_gps_points": 19160,
+    "gps_points_per_trip": {
+      "min": 262.0,
+      "p25": 917.75,
+      "median": 1420.0,
+      "mean": 1916.0,
+      "p75": 2872.0,
+      "max": 3958.0
+    },
+    "route_arcs_per_trip": {
+      "min": 95.0,
+      "p25": 153.5,
+      "median": 250.0,
+      "mean": 347.7,
+      "p75": 357.75,
+      "max": 1323.0
+    },
+    "nodes_per_trip": {
+      "min": 1770.0,
+      "p25": 4908.0,
+      "median": 6596.5,
+      "mean": 9068.9,
+      "p75": 11844.25,
+      "max": 26635.0
+    },
+    "arcs_per_trip": {
+      "min": 3577.0,
+      "p25": 10292.25,
+      "median": 13145.0,
+      "mean": 18504.1,
+      "p75": 24818.5,
+      "max": 56027.0
+    },
+    "trajectory_length_m": {
+      "min": 5559.217669925869,
+      "p25": 12184.821189902974,
+      "median": 20967.476989643314,
+      "mean": 29756.47929910724,
+      "p75": 48511.4909866668,
+      "max": 71806.3912010174
+    },
+    "duration_s": {
+      "min": 265.0,
+      "p25": 1040.0,
+      "median": 1809.5,
+      "mean": 2025.0,
+      "p75": 2871.25,
+      "max": 4000.0
+    },
+    "sampling_interval": {
+      "n_intervals": 19150,
+      "frac_eq_1s": 0.9862140992167102,
+      "frac_le_1s": 0.9862140992167102,
+      "frac_gt_2s": 0.007206266318537859,
+      "frac_gt_10s": 0.0014099216710182767,
+      "n_gt_2s": 138,
+      "n_gt_10s": 27,
+      "max_gap_s": 210.0,
+      "median_s": 1.0,
+      "value_counts_top": {
+        "1.0": 18886,
+        "2.0": 126,
+        "3.0": 62,
+        "4.0": 28
+      }
+    },
+    "data_quality": {
+      "trips_with_nan_rows": 0,
+      "trips_with_invalid_coords": 0,
+      "duplicate_timestamps_total": 0,
+      "non_monotonic_timestamps_total": 0,
+      "trips_missing_route_file": 0,
+      "trips_with_out_of_range_arcs": 0,
+      "trips_with_out_of_range_route": 0,
+      "trips_with_gaps_gt2s": 3,
+      "trips_with_gaps_gt10s": 2,
+      "route_fully_continuous_trips": 9,
+      "trips_with_repeated_route_arcs": 1
+    },
+    "bounding_box_overall": {
+      "lon_min": -93.424337,
+      "lon_max": 77.271115,
+      "lat_min": 42.645529,
+      "lat_max": 61.69959
+    },
+    "road_graph": {
+      "nodes_total": 90689,
+      "arcs_total": 185041,
+      "max_nodes_trip": 26635,
+      "max_arcs_trip": 56027,
+      "trips_single_weak_component": 0,
+      "median_largest_weak_frac": 0.9706052316639073,
+      "median_largest_strong_frac": 0.9609677685847287,
+      "median_mean_out_degree": 2.0662104513560426,
+      "median_frac_arcs_with_reverse": 0.9326111818223632
+    }
+  }
+}
