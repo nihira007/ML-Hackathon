@@ -1,0 +1,14 @@
+{
+  "n_trips": 10,
+  "mean_cls_continuity": 0.8942,
+  "mean_hmm_continuity": 0.9969,
+  "mean_continuity_gain": 0.1027,
+  "mean_cls_top1": 0.5561,
+  "mean_hmm_top1": 0.6413,
+  "mean_top1_gain": 0.0851,
+  "mean_cls_seq_f1": 0.6106,
+  "mean_hmm_seq_f1": 0.6709,
+  "mean_seq_f1_gain": 0.0603,
+  "total_hmm_runtime_sec": 19.0266,
+  "best_improvement_trip": "00000052"
+}
