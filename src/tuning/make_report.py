@@ -83,10 +83,21 @@ def make_report(models, tuning):
     title = "Synthetic verification" if summary["smoke"] else "PathSnap experiments"
     plots = tuning / "plots"
     plots.mkdir(parents=True, exist_ok=True)
+    selection = pd.read_csv(tuning / "model_selection.csv")
     lines = [f"# Person 3 · {title}", ""]
     if summary["smoke"]:
         lines += ["These results measure generated candidates and verify the software workflow.", ""]
-    lines += ["## 3.2 Advanced classifiers", ""]
+    lines += [
+        "## 3.1 Baseline comparison", "",
+        "| Model | CV Macro F1 | Student-test Top-1 | Student-test log loss | Inference (s) | Rank score |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for row in selection.itertuples():
+        lines.append(
+            f"| {row.model_name} | {row.cv_macro_f1_mean:.4f} | {row.student_test_top1_accuracy:.2%} | "
+            f"{row.student_test_log_loss:.4f} | {row.inference_time_sec:.4f} | {row.weighted_rank:.2f} |"
+        )
+    lines += ["", "## 3.2 Advanced classifiers", ""]
     for record in baselines:
         slug, name = record["model"], record["model_name"]
         fit, objective = RATIONALE[slug]
@@ -115,7 +126,6 @@ def make_report(models, tuning):
 
     loss_curve(models, title, plots / "mlp_loss_curve.png")
 
-    selection = pd.read_csv(tuning / "model_selection.csv")
     comparisons(selection, selection.model_name, list(METRICS)[:4], title, plots / "baseline_comparison.png")
     trials = pd.read_csv(tuning / "optuna_trials.csv")
     complete = trials[trials.state.eq("COMPLETE")]

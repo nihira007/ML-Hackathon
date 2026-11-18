@@ -1,8 +1,10 @@
 import json
 
+import numpy as np
+import pandas as pd
 import pytest
 
-from src.models.advanced.common import feature_names
+from src.models.advanced.common import feature_names, sample_fit_rows
 from src.tuning.bayesian_opt import run_tuning
 
 
@@ -30,3 +32,14 @@ def test_tuning_requires_one_record_per_advanced_model(tmp_path, models):
             tmp_path / "tuning", tmp_path / "artifacts",
             trials=2, epochs=4, signature=[], smoke=True,
         )
+
+
+def test_classical_budget_keeps_observations_intact():
+    frame = pd.DataFrame({"trip_id": ["a", "a", "a", "a", "b", "b"],
+                          "obs_idx": [0, 0, 1, 1, 0, 0]})
+    rows = np.arange(len(frame))
+
+    chosen = sample_fit_rows(frame, rows, 2)
+
+    assert chosen.tolist() in ([0, 1], [2, 3], [4, 5])
+    assert np.array_equal(chosen, sample_fit_rows(frame, rows, 2))
