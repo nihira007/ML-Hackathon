@@ -1,0 +1,3 @@
+trip_id,n_nodes,n_arcs,n_track_points,n_route_arcs,graph_load_sec,route_continuity,sequence_f1,dijkstra_cold_ms,dijkstra_warm_ms,map_file
+00000001,88809,165790,1315,525,1.1752,1.0,1.0,2.14,0.0062,trip_00000001_reconstruction.html
+00000002,7936,16139,7243,262,0.1247,0.9962,1.0,2.8,0.0066,trip_00000002_reconstruction.html
