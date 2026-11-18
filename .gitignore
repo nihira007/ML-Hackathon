@@ -1,0 +1,31 @@
+# OS / Editor
+.DS_Store
+**/.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Large intermediate parquet datasets (regenerate from src/features/ scripts)
+data/processed/*.parquet
+
+# Secrets / Environment variables (NEVER commit credentials)
+.env
+.env.*
+*.pem
+*.key
