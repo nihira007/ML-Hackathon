@@ -4,6 +4,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import platform
+from importlib.metadata import version
 from pathlib import Path
 from time import perf_counter
 
@@ -11,6 +13,7 @@ import numpy as np
 import pandas as pd
 from sklearn.base import clone
 from sklearn.impute import SimpleImputer
+from sklearn.inspection import permutation_importance
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, log_loss, precision_score, recall_score
 from sklearn.model_selection import GroupKFold
 from sklearn.neural_network import MLPClassifier
@@ -205,11 +208,100 @@ def grouped_cv(train, features, name, *, params=None, epochs=20, estimator=None)
     }, pd.DataFrame(histories)
 
 
+def evaluate_model(train, test, features, name, cv, *, params=None, epochs=20, estimator=None):
+    start = perf_counter()
+    model, _ = fit_model(name, train[features], train.is_match,
+                         params=params, epochs=epochs, estimator=estimator)
+    train_seconds = perf_counter() - start
+    X_test = test[features]
+    # Compare inference over the same batch. Median guards against a one-off timing spike.
+    times = []
+    for _ in range(3):
+        start = perf_counter()
+        probabilities = model.predict_proba(X_test)[:, 1]
+        times.append(perf_counter() - start)
+    return model, probabilities, {
+        **cv, "train_time_sec": train_seconds, "inference_time_sec": float(np.median(times)),
+        "student_test": metrics(test, probabilities),
+    }
+
+
+def importance_table(model, test, features):
+    # Use the same log-loss permutation measure for all models, including the MLP.
+    sample = test.sample(n=min(15000, len(test)), random_state=SEED)
+    if sample.is_match.nunique() < 2:
+        return pd.DataFrame({"feature": features, "importance": np.nan})
+    with threadpool_limits(limits=2):
+        importance = permutation_importance(model, sample[features], sample.is_match,
+                                            scoring="neg_log_loss", n_repeats=3, random_state=SEED)
+    return pd.DataFrame({"feature": features, "importance": importance.importances_mean,
+                         "std": importance.importances_std}).sort_values("importance", ascending=False)
+
+
+def comparison_row(record):
+    test = record["student_test"]
+    fields = ("cv_macro_f1_mean", "cv_macro_f1_std", "cv_log_loss_mean", "cv_top1_accuracy_mean",
+              "train_macro_f1_mean", "inference_time_sec", "train_time_sec")
+    return {
+        "model_name": record["model_name"],
+        **{field: record[field] for field in fields},
+        **{f"student_test_{field}": test[field] for field in
+           ("top1_accuracy", "macro_f1", "accuracy", "precision", "recall", "log_loss", "candidate_miss_rate")},
+    }
+
+
+def package_versions():
+    packages = ("numpy", "pandas", "scikit-learn", "lightgbm", "xgboost", "optuna", "joblib", "pyarrow", "matplotlib")
+    return {"python": platform.python_version(), **{name: version(name) for name in packages}}
+
+
+def run_baseline(name, train, test, features, output, *, feature_version, signature, epochs, smoke=False):
+    cv, history = grouped_cv(train, features, name, epochs=epochs)
+    model, p, record = evaluate_model(train, test, features, name, cv, epochs=epochs)
+    record.update(model_name=NAMES[name], model=name, feature_version=feature_version, smoke=smoke,
+                  data_signature=signature, seeds={"training": SEED}, epochs=epochs,
+                  initial_params=DEFAULTS[name], train_trips=train.trip_id.nunique(),
+                  student_test_trips=test.trip_id.nunique())
+    output.mkdir(parents=True, exist_ok=True)
+    candidate_predictions(test, p).to_parquet(output / f"{name}_student_test_preds.parquet", index=False)
+    if not history.empty:
+        history.to_csv(output / "mlp_history.csv", index=False)
+    importance_table(model, test, features).to_csv(output / f"{name}_feature_importance.csv", index=False)
+    write_json(output / f"{name}_metrics.json", record)
+    print(f"{name}: CV macro F1 {record['cv_macro_f1_mean']:.4f}, "
+          f"student-test Top-1 {record['student_test']['top1_accuracy']:.4f}", flush=True)
+    return record
+
+
+def data_arguments(parser):
+    parser.add_argument("--train", type=Path, default=Path("data/processed/train_features.parquet"))
+    parser.add_argument("--test", type=Path, default=Path("data/processed/student_test_features.parquet"))
+    parser.add_argument("--features", type=Path, default=Path("artifacts/feature_columns.json"))
+    parser.add_argument("--epochs", type=int, default=20)
+
+
 def cli(name=None):
-    parser = argparse.ArgumentParser(description="Check the advanced models on generated data")
-    parser.parse_args()
-    from src.models.advanced.smoke import check_models
-    check_models([name] if name else NAMES)
+    parser = argparse.ArgumentParser(description="Run the advanced candidate classifier benchmarks")
+    data_arguments(parser)
+    parser.add_argument("--feature-version", choices=["v1"], default="v1")
+    parser.add_argument("--output", type=Path, default=Path("outputs/models/advanced"))
+    args = parser.parse_args()
+    if args.epochs < 1 or (name == "mlp" and args.feature_version == "v1"):
+        parser.error("Use a positive epoch count and v2 features for the MLP.")
+    output = args.output / "v1" if args.feature_version == "v1" else args.output
+    features = feature_names(args.features)
+    train, test = load_data(args.train, args.test, features)
+    signature = data_signature(args.train, args.test, args.features)
+    models = [name] if name else ["lgbm", "xgb"]
+    rows = [
+        run_baseline(model, train, test, features, output, feature_version=args.feature_version,
+                     signature=signature, epochs=args.epochs) for model in models
+    ]
+    if name is None:
+        pd.DataFrame([comparison_row(row) for row in rows]).to_csv(output / "advanced_comparison.csv", index=False)
+    (output / "env_versions.txt").write_text(
+        "".join(f"{key}=={value}\n" for key, value in package_versions().items()), encoding="utf-8",
+    )
 
 
 if __name__ == "__main__":
