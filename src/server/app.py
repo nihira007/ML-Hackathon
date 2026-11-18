@@ -84,7 +84,7 @@ async def get_trip(trip_id: str) -> Dict[str, Any]:
 @app.get("/api/predict/{trip_id}")
 async def predict_trip(
     trip_id: str,
-    model: str = Query(default="rf", pattern="^(rf|knn|logreg|heuristic)$"),
+    model: str = Query(default="tuned", pattern="^(tuned|lgbm|xgb|mlp|rf|knn|logreg|heuristic)$"),
 ) -> Dict[str, Any]:
     """Get model predictions, matched road segments, and live evaluation metrics."""
     try:
