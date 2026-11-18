@@ -29,3 +29,8 @@ data/processed/*.parquet
 .env.*
 *.pem
 *.key
+
+# Alternative version working trees
+version 2/
+version 2
+

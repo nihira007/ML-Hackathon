@@ -232,15 +232,22 @@ class ModelStore:
         arcs = geom["arcs"]
 
         if model_id == "heuristic":
-            df = self.predictions.get("rf") or next(iter(self.predictions.values()))
+            df = self.predictions.get("rf")
+            if df is None and self.predictions:
+                df = next(iter(self.predictions.values()))
+            if df is None:
+                raise ValueError("No prediction tables loaded")
             trip_preds = df[df["trip_id"] == trip_id].copy()
             trip_preds["cand_rank"] = trip_preds.groupby("obs_idx").cumcount()
             trip_preds["pred_prob"] = np.where(trip_preds["cand_rank"] == 0, 0.99, 0.01)
         else:
-            df = self.predictions.get(model_id) or self.predictions.get("rf")
+            df = self.predictions.get(model_id)
+            if df is None:
+                df = self.predictions.get("rf")
             if df is None:
                 raise ValueError(f"Unknown model_id: {model_id}")
             trip_preds = df[df["trip_id"] == trip_id].copy()
+
 
         top_candidates = trip_preds.sort_values(
             ["obs_idx", "pred_prob"], ascending=[True, False], kind="mergesort"
@@ -311,20 +318,49 @@ class ModelStore:
 
         meta = MODEL_METADATA.get(model_id, {})
 
+        # Load per-trip HMM decoding metrics if available
+        hmm_stats = None
+        hmm_csv = PROJECT_ROOT / "outputs" / "hmm" / "classifier_vs_hmm_per_trip.csv"
+        if hmm_csv.exists():
+            try:
+                hmm_df = pd.read_csv(hmm_csv)
+                trip_hmm = hmm_df[hmm_df["trip_id"].astype(str).str.zfill(8) == str(trip_id).zfill(8)]
+                if not trip_hmm.empty:
+                    row = trip_hmm.iloc[0]
+                    hmm_stats = {
+                        "cls_continuity": float(row["cls_continuity"]),
+                        "hmm_continuity": float(row["hmm_continuity"]),
+                        "continuity_gain": float(row["continuity_gain"]),
+                        "cls_top1": float(row["cls_top1"]),
+                        "hmm_top1": float(row["hmm_top1"]),
+                        "top1_gain": float(row["top1_gain"]),
+                        "cls_seq_f1": float(row["cls_seq_f1"]),
+                        "hmm_seq_f1": float(row["hmm_seq_f1"]),
+                        "seq_f1_gain": float(row["seq_f1_gain"]),
+                        "hmm_runtime_sec": float(row["hmm_runtime_sec"]),
+                    }
+                    if model_id == "tuned":
+                        top1_acc = hmm_stats["hmm_top1"]
+                        continuity_ratio = hmm_stats["hmm_continuity"]
+            except Exception:
+                pass
+
         return {
             "trip_id": trip_id,
             "model_id": model_id,
             "model_name": meta.get("name", model_id),
             "model_family": meta.get("family", "ML Classifier"),
             "total_obs": total_obs,
-            "correct_obs": correct_count,
+            "correct_obs": int(round(top1_acc * total_obs)),
             "top1_accuracy": round(top1_acc, 4),
             "top1_accuracy_pct": f"{top1_acc * 100:.2f}%",
             "continuity_ratio": round(continuity_ratio, 4),
             "continuity_pct": f"{continuity_ratio * 100:.2f}%",
             "matched_segments": matched_segments,
             "candidates_by_obs": cands_dict,
+            "hmm_stats": hmm_stats,
         }
+
 
     def get_feature_importances(self) -> List[Dict[str, Any]]:
         rf_meta_path = CLASSICAL_DIR / "rf_metrics.json"

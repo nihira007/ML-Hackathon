@@ -55,6 +55,10 @@ V2_EXTRA = [
     "same_as_prev_nearest", "same_as_next_nearest", "connected_prev_nearest", "connected_next_nearest",
     # topological
     "from_out_degree", "to_out_degree", "to_in_degree", "has_reverse_arc", "local_road_density",
+    # multi-step trajectory & margin context (zero-leakage)
+    "bearing_diff_w5_deg", "cos_bearing_diff_w5",
+    "connected_prev2_nearest", "connected_next2_nearest",
+    "cand_freq_window5", "perp_dist_ratio_to_2nd",
 ]
 V2_FEATURES = V1_FEATURES + V2_EXTRA
 FEATURE_SETS = {"v1": V1_FEATURES, "v2": V2_FEATURES}
@@ -78,6 +82,17 @@ def kinematics(P: np.ndarray, ts: np.ndarray) -> Dict[str, np.ndarray]:
     d = P[q2] - P[p2]
     moved = np.linalg.norm(d, axis=1) >= 2.0                                       # heading undefined when ~stationary
     heading = np.where(moved, bearing_deg(d[:, 0], d[:, 1]), np.nan)
+
+    # wider +/-5 step smoothed heading for low-speed / noisy turns
+    p5 = p2.copy()
+    q5 = q2.copy()
+    for _ in range(3):
+        p5 = np.where((p5 > 0) & (ts[idx] - ts[np.maximum(p5 - 1, 0)] <= 12.0), p5 - 1, p5)
+        q5 = np.where((q5 < n - 1) & (ts[np.minimum(q5 + 1, n - 1)] - ts[idx] <= 12.0), q5 + 1, q5)
+    d5 = P[q5] - P[p5]
+    moved5 = np.linalg.norm(d5, axis=1) >= 3.0
+    heading_w5 = np.where(moved5, bearing_deg(d5[:, 0], d5[:, 1]), heading)
+
     prev_speed = np.r_[np.nan, speed[:-1]]
     linked_prev = np.nan_to_num(dtp, nan=1e9) <= LINK_S
     accel = np.where(linked_prev, (speed - prev_speed) / np.maximum(np.nan_to_num(dtp, nan=1.0), 1e-6), np.nan)
@@ -89,6 +104,7 @@ def kinematics(P: np.ndarray, ts: np.ndarray) -> Dict[str, np.ndarray]:
         "accel_mps2": np.clip(accel, -10.0, 10.0),
         "gps_gap_flag": (np.nan_to_num(dtp, nan=0.0) > GAP_FLAG_S).astype(np.float64),
         "heading": heading,
+        "heading_w5": heading_w5,
         "dt_raw": np.nan_to_num(dt_s, nan=1.0),
     }
 
@@ -170,6 +186,41 @@ def compute_trip_features(trip: Trip, with_labels: bool, feature_set: str = "v2"
             f["local_road_density"] = index.road_density(uniq)[inv]
             for key in ("speed_mps", "dt_s", "accel_mps2", "gps_gap_flag"):
                 f[key] = kin[key][o]
+
+            # multi-step trajectory & margin context
+            diff_w5 = angular_diff_deg(kin["heading_w5"][o], arc_b)
+            f["bearing_diff_w5_deg"] = diff_w5
+            f["cos_bearing_diff_w5"] = np.cos(np.radians(diff_w5))
+
+            prev2_near = np.r_[-1, -1, near[:-2]] if n >= 2 else np.full(n, -1, dtype=np.int64)
+            next2_near = np.r_[near[2:], -1, -1] if n >= 2 else np.full(n, -1, dtype=np.int64)
+            p2n, n2n = prev2_near[o], next2_near[o]
+            f["connected_prev2_nearest"] = (
+                (arc == p2n) | ((p2n >= 0) & (frm[a_safe] == to[np.maximum(p2n, 0)]))
+            ).astype(np.float64)
+            f["connected_next2_nearest"] = (
+                (arc == n2n) | ((n2n >= 0) & (to[a_safe] == frm[np.maximum(n2n, 0)]))
+            ).astype(np.float64)
+
+            second_idx = np.where(counts > 1, starts + 1, starts)
+            d2nd = np.repeat(perp[second_idx], counts)
+            f["perp_dist_ratio_to_2nd"] = (perp + 1.0) / (d2nd + 1.0)
+
+            top3_mask = cand["cand_rank"] < 3
+            top3_arcs_per_obs: List[set[int]] = [set() for _ in range(n)]
+            for oi, ai in zip(o[top3_mask], arc[top3_mask]):
+                if ai >= 0:
+                    top3_arcs_per_obs[int(oi)].add(int(ai))
+            freq_w5 = np.zeros(M, dtype=np.float64)
+            for row_i in range(M):
+                oi = int(o[row_i])
+                ai = int(arc[row_i])
+                if ai >= 0:
+                    lo_w = max(0, oi - 2)
+                    hi_w = min(n, oi + 3)
+                    hits = sum(1 for w_i in range(lo_w, hi_w) if ai in top3_arcs_per_obs[w_i])
+                    freq_w5[row_i] = hits / float(hi_w - lo_w)
+            f["cand_freq_window5"] = freq_w5
     else:                                                            # no road graph at all: explicit empty marker
         for c in cols:
             f[c] = np.full(M, np.nan)

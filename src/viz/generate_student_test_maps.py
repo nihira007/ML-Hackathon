@@ -32,7 +32,8 @@ def generate_representative_maps() -> None:
     maps_out.mkdir(parents=True, exist_ok=True)
 
     df_all = pd.read_parquet(parquet_path)
-    target_trips = ["00000000", "00000052", "00000091"]
+    all_test_trips = sorted([d.name for d in test_dir.iterdir() if d.is_dir() and (d / f"{d.name}.track").exists()])
+    target_trips = all_test_trips if all_test_trips else ["00000000", "00000052", "00000091"]
 
     config = HMMConfig()
     decoder = ViterbiDecoder(config)

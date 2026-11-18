@@ -1,9 +1,9 @@
 Model,Algorithm Family,Key Configuration,CV Macro F1-score,CV Macro F1 Std,Top-1 Accuracy,Route Continuity,Student-Test Macro F1-score,Log Loss,Inference Time (s)
-Logistic Regression,Linear / Probabilistic,"C=1.0, penalty='l2', class_weight='balanced', solver='lbfgs'",0.8551,0.0146,0.8669,0.9829,0.8527,0.1827,0.0222
-Distance-Weighted KNN,Instance-based / Non-parametric,"n_neighbors=15, weights='distance', metric='euclidean'",0.8785,0.0126,0.7936,0.9711,0.8748,0.2607,8.3141
-Random Forest,Bagging / Tree Ensemble,"n_estimators=100, max_depth=14, min_samples_leaf=25, class_weight='balanced_subsample'",0.9147,0.023,0.872,0.9739,0.9154,0.1159,1.0218
-LightGBM,Gradient Boosted Decision Trees (Leaf-wise),"n_estimators=160, learning_rate=0.06, num_leaves=31, min_child_samples=30",0.9267,0.0195,0.8885,0.9825,0.9344,0.0718,0.6176
-XGBoost,Gradient Boosted Decision Trees (Depth-wise),"n_estimators=160, learning_rate=0.06, max_depth=5, tree_method='hist'",0.9287,0.0189,0.8807,0.9825,0.931,0.0746,0.1334
-MLP Neural Network,Feed-Forward Multi-Layer Perceptron,"hidden_layer_sizes=(64, 32), activation='relu', solver='adam', epochs=20",0.9191,0.0186,0.8745,0.9793,0.9238,0.0822,0.0491
-XGBoost (Optuna Tuned),Bayesian-Optimized GBDT (35 TPE Trials),TPE-tuned XGBoost (artifacts/final_model.joblib),0.9294,0.0191,0.8858,0.9831,0.9329,0.0717,0.2189
-XGBoost (Tuned) + HMM/Viterbi,Probabilistic Sequence Decoder + GBDT,"Tuned XGBoost emissions + Viterbi (beta=25.0, max_dist=1000.0m)",0.9294,0.0191,0.9145,0.9988,0.9329,0.0717,4.8129
+Logistic Regression,Linear / Probabilistic,"C=1.0, penalty='l2', class_weight='balanced', solver='lbfgs'",0.8707,0.0112,0.8815,0.9868,0.8631,0.1662,0.0115
+Distance-Weighted KNN,Instance-based / Non-parametric,"n_neighbors=15, weights='distance', metric='euclidean'",0.8917,0.0146,0.8166,0.9812,0.8843,0.2722,8.3207
+Random Forest,Bagging / Tree Ensemble,"n_estimators=100, max_depth=14, min_samples_leaf=25, class_weight='balanced_subsample'",0.9265,0.0216,0.887,0.9754,0.9241,0.1039,2.054
+LightGBM,Gradient Boosted Decision Trees (Leaf-wise),"n_estimators=160, learning_rate=0.06, num_leaves=31, min_child_samples=30",0.939,0.019,0.9014,0.9848,0.9418,0.0654,0.7806
+XGBoost,Gradient Boosted Decision Trees (Depth-wise),"n_estimators=160, learning_rate=0.06, max_depth=5, tree_method='hist'",0.9391,0.0189,0.8976,0.9844,0.9391,0.0672,0.1948
+MLP Neural Network,Feed-Forward Multi-Layer Perceptron,"hidden_layer_sizes=(64, 32), activation='relu', solver='adam', epochs=20",0.9313,0.0171,0.8923,0.9826,0.9335,0.0748,0.0483
+XGBoost (Optuna Tuned),Bayesian-Optimized GBDT (35 TPE Trials),TPE-tuned XGBoost (artifacts/final_model.joblib),0.9399,0.0181,0.9019,0.9845,0.9427,0.0644,0.654
+XGBoost (Tuned) + HMM/Viterbi,Probabilistic Sequence Decoder + GBDT,"Tuned XGBoost emissions + Viterbi (beta=25.0, max_dist=1000.0m)",0.9399,0.0181,0.9247,0.9989,0.9427,0.0644,5.2211

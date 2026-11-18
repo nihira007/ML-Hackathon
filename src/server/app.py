@@ -29,9 +29,14 @@ app.add_middleware(
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
+OUTPUTS_DIR = Path(__file__).resolve().parents[2] / "outputs"
 
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+if OUTPUTS_DIR.exists():
+    app.mount("/outputs", StaticFiles(directory=str(OUTPUTS_DIR)), name="outputs")
+
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -103,6 +108,112 @@ async def get_benchmark() -> List[Dict[str, Any]]:
 async def get_feature_importances() -> List[Dict[str, Any]]:
     """Return Gini feature importances for Random Forest."""
     return store.get_feature_importances()
+
+
+@app.get("/api/folium_map/{trip_id}", response_class=HTMLResponse)
+async def get_folium_map(trip_id: str) -> HTMLResponse:
+    """Serve the interactive Folium map generated for Deliverables Section 6."""
+    map_file = OUTPUTS_DIR / "maps" / f"trip_{trip_id}_reconstruction.html"
+    if not map_file.exists():
+        raise HTTPException(status_code=404, detail=f"Folium map for trip {trip_id} not found")
+    with open(map_file, "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
+
+
+@app.get("/api/tuning")
+async def get_tuning_summary() -> Dict[str, Any]:
+    """Return Bayesian Optuna hyperparameter optimization summary (Section 4)."""
+    summary_file = OUTPUTS_DIR / "tuning" / "tuning_summary.json"
+    if not summary_file.exists():
+        raise HTTPException(status_code=404, detail="Tuning summary not found")
+    import json
+    with open(summary_file, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+@app.get("/api/hmm")
+async def get_hmm_summary() -> Dict[str, Any]:
+    """Return Classifier vs HMM route reconstruction metrics (Section 5)."""
+    summary_file = OUTPUTS_DIR / "hmm" / "classifier_vs_hmm_summary.json"
+    if not summary_file.exists():
+        raise HTTPException(status_code=404, detail="HMM summary not found")
+    import json
+    with open(summary_file, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+@app.get("/api/deliverables")
+async def get_deliverables_summary() -> Dict[str, Any]:
+    """Return verified metadata mapped directly to Deliverables.pdf Sections 1-7."""
+    return {
+        "title": "PathSnap ML Hackathon Technical Deliverables",
+        "sections": {
+            "sec2_eda": {
+                "title": "2.2 Dataset Understanding & EDA",
+                "missing_values": "0 across all 80 train + 10 test trips",
+                "train_trips": 80,
+                "test_trips": 10,
+                "features_extracted": 27,
+                "feature_version": "v2",
+                "leakage_guard": "5-Fold GroupKFold by trip_id"
+            },
+            "sec3_models": {
+                "title": "3. Model Experimentation & Comparison",
+                "minimum_required": 5,
+                "models_trained": 7,
+                "models": [
+                    {"id": "logreg", "name": "Logistic Regression", "family": "Linear / Probabilistic", "cv_f1": 0.8707, "top1": "88.15%", "continuity": "98.68%", "test_f1": 0.8631, "loss": 0.1662, "latency": "11.5ms"},
+                    {"id": "knn", "name": "Distance-Weighted KNN", "family": "Instance-based", "cv_f1": 0.8917, "top1": "81.66%", "continuity": "98.12%", "test_f1": 0.8843, "loss": 0.2722, "latency": "8.32s"},
+                    {"id": "rf", "name": "Random Forest", "family": "Tree Ensemble", "cv_f1": 0.9265, "top1": "88.70%", "continuity": "97.54%", "test_f1": 0.9241, "loss": 0.1039, "latency": "2.05s"},
+                    {"id": "lgbm", "name": "LightGBM", "family": "Leaf-wise GBDT", "cv_f1": 0.9390, "top1": "90.14%", "continuity": "98.48%", "test_f1": 0.9418, "loss": 0.0654, "latency": "0.78s"},
+                    {"id": "xgb", "name": "XGBoost", "family": "Depth-wise GBDT", "cv_f1": 0.9391, "top1": "89.76%", "continuity": "98.44%", "test_f1": 0.9391, "loss": 0.0672, "latency": "0.19s"},
+                    {"id": "mlp", "name": "MLP Neural Network", "family": "Feed-Forward Neural Net", "cv_f1": 0.9313, "top1": "89.23%", "continuity": "98.26%", "test_f1": 0.9335, "loss": 0.0748, "latency": "48.3ms"},
+                    {"id": "tuned", "name": "XGBoost (Optuna Tuned) + HMM", "family": "Bayesian GBDT + Sequence Decoder", "cv_f1": 0.9399, "top1": "92.47%", "continuity": "99.89%", "test_f1": 0.9427, "loss": 0.0644, "latency": "5.22s"}
+                ]
+            },
+            "sec4_bayesian": {
+                "title": "4. Bayesian Hyperparameter Optimisation",
+                "sampler": "TPESampler (Optuna)",
+                "trials": 35,
+                "objective": "Minimize 5-fold CV log loss",
+                "best_cv_log_loss": 0.0694,
+                "gain": "+0.0052 log loss reduction over default",
+                "best_params": {
+                    "n_estimators": 200,
+                    "learning_rate": 0.0322,
+                    "max_depth": 8,
+                    "subsample": 0.7736,
+                    "colsample_bytree": 0.9076,
+                    "reg_alpha": 0.7618,
+                    "reg_lambda": 0.9836,
+                    "min_child_weight": 1
+                }
+            },
+            "sec5_hmm": {
+                "title": "5. HMM and Viterbi Route Reconstruction",
+                "hidden_states": "Directed road network arcs",
+                "emission_probs": "Calibrated model class probabilities",
+                "transition_probs": "Shortest path network distance exponential decay",
+                "continuity_raw": "98.45%",
+                "continuity_hmm": "99.89%",
+                "top1_gain": "+1.29% (91.18% -> 92.47%)",
+                "continuity_gain": "+1.44% (98.45% -> 99.89%)"
+            },
+            "sec6_folium": {
+                "title": "6. Geographical Visualisation Using Folium",
+                "mandatory": True,
+                "layers": ["Raw GPS Observations", "Directed Road Network Arcs", "Ground Truth Reference Route", "Predicted Route", "Candidate Arcs Pool"],
+                "total_maps": 10
+            },
+            "sec7_deployment": {
+                "title": "7. API, UI and Deployment",
+                "framework": "FastAPI (REST) + Leaflet (Canvas Vector Rendering) + Tailwind + GSAP",
+                "port": 8000,
+                "two_laptop_ready": True
+            }
+        }
+    }
+
 
 
 if __name__ == "__main__":

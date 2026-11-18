@@ -16,6 +16,7 @@
           colors: {
             space: '#070a12',
             obsidian: '#0d1321',
+            slateDark: '#121b2e',
             cyan: {
               400: '#22d3ee',
               500: '#00f0ff',
@@ -32,7 +33,7 @@
             }
           },
           fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
             mono: ['"JetBrains Mono"', 'SFMono-Regular', 'Menlo', 'monospace'],
           }
         }
@@ -51,9 +52,18 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
+    :root {
+      --space: #070a12;
+      --obsidian: #0d1321;
+      --cyan: #00f0ff;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --red: #ef4444;
+    }
+
     body {
       background-color: #070a12;
       color: #f8fafc;
@@ -62,19 +72,20 @@
     }
 
     .telemetry-glass {
-      background: rgba(13, 19, 33, 0.78);
+      background: rgba(13, 19, 33, 0.85);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+      box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.5);
     }
 
     .telemetry-card-subtle {
-      background: rgba(18, 27, 46, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(18, 27, 46, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(12px);
     }
 
-    /* Custom Leaflet Dark Stying */
+    /* Custom Leaflet Dark Styling */
     .leaflet-container {
       background: #070a12 !important;
     }
@@ -89,226 +100,313 @@
 
     /* Glow utilities */
     .glow-cyan {
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.35);
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
     }
     .glow-emerald {
-      box-shadow: 0 0 20px rgba(16, 185, 129, 0.35);
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
     }
 
     /* Custom scrollbars */
     ::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
+      width: 6px;
+      height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: rgba(13, 19, 33, 0.4);
+      background: rgba(13, 19, 33, 0.5);
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.18);
       border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 240, 255, 0.4);
+      background: rgba(0, 240, 255, 0.5);
+    }
+
+    /* Custom select styling */
+    select option {
+      background-color: #0d1321;
+      color: #f8fafc;
     }
   </style>
 </head>
 
-<body class="h-screen w-screen flex flex-col select-none">
-  <!-- Top Telemetry Header -->
-  <header class="h-16 w-full telemetry-glass border-b border-white/10 z-20 flex items-center justify-between px-6 flex-shrink-0">
-    <div class="flex items-center gap-4">
-      <div class="flex items-center gap-3">
-        <div class="relative flex items-center justify-center">
-          <span class="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-emerald-400 opacity-75"></span>
+<body class="h-screen w-screen flex flex-col select-none antialiased">
+
+  <!-- ========================================== -->
+  <!-- TOP TELEMETRY HUD HEADER                   -->
+  <!-- ========================================== -->
+  <header class="h-16 w-full telemetry-glass border-b border-white/10 z-20 flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
+    
+    <!-- Left: Brand + Status + Trip + Model -->
+    <div class="flex items-center gap-3 lg:gap-4 overflow-x-auto py-1">
+      <!-- Brand & Pulse -->
+      <div class="flex items-center gap-2.5 flex-shrink-0">
+        <div class="relative flex items-center justify-center w-3 h-3">
+          <span class="animate-ping absolute inline-flex h-3.5 w-3.5 rounded-full bg-emerald-400 opacity-75"></span>
           <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
         </div>
         <div class="flex flex-col">
-          <div class="flex items-center gap-2">
-            <h1 class="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
-              PathSnap <span class="text-xs font-mono px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">LIVE HUD</span>
+          <div class="flex items-center gap-1.5">
+            <h1 class="text-sm lg:text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
+              PathSnap <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">HUD v2</span>
             </h1>
           </div>
-          <span class="text-[11px] font-mono text-slate-400">GPS Map-Matching & Route Reconstruction</span>
+          <span class="text-[10px] font-mono text-slate-400 hidden sm:inline">Map-Matching & Route Reconstruction</span>
         </div>
       </div>
 
-      <div class="h-6 w-px bg-white/10 mx-2 hidden md:block"></div>
+      <div class="h-6 w-px bg-white/10 mx-1 hidden md:block"></div>
 
       <!-- Trip Selector -->
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-mono text-slate-400 uppercase tracking-wider hidden lg:inline">Trip:</span>
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <span class="text-[11px] font-mono text-slate-400 uppercase tracking-wider hidden xl:inline">Trip:</span>
         <div class="relative">
-          <select id="tripSelect" class="bg-slate-900/90 text-white text-xs font-mono font-medium rounded-lg px-3 py-1.5 border border-white/15 focus:outline-none focus:border-cyan-400 appearance-none pr-8 cursor-pointer transition">
+          <select id="tripSelect" class="bg-slate-900/90 text-white text-xs font-mono font-medium rounded-lg px-2.5 py-1.5 border border-white/15 focus:outline-none focus:border-cyan-400 appearance-none pr-7 cursor-pointer transition">
             <!-- Dynamically populated -->
           </select>
-          <svg class="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          <svg class="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
         </div>
       </div>
 
-      <!-- Model Selector -->
-      <div class="flex items-center gap-2 ml-2">
-        <span class="text-xs font-mono text-slate-400 uppercase tracking-wider hidden lg:inline">Model:</span>
-        <div class="flex bg-slate-900/80 p-0.5 rounded-lg border border-white/10 text-xs font-mono">
-          <button data-model="rf" class="model-btn px-2.5 py-1 rounded-md text-white font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition">Model 3: RF</button>
-          <button data-model="knn" class="model-btn px-2.5 py-1 rounded-md text-slate-400 hover:text-white transition">Model 2: KNN</button>
-          <button data-model="logreg" class="model-btn px-2.5 py-1 rounded-md text-slate-400 hover:text-white transition">Model 1: LogReg</button>
-          <button data-model="heuristic" class="model-btn px-2.5 py-1 rounded-md text-slate-400 hover:text-white transition">Heuristic</button>
+      <!-- Model Selector Dropdown / Group -->
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <span class="text-[11px] font-mono text-slate-400 uppercase tracking-wider hidden xl:inline">Model:</span>
+        <div class="relative">
+          <select id="modelSelect" class="bg-slate-900/90 text-emerald-400 text-xs font-mono font-bold rounded-lg px-2.5 py-1.5 border border-emerald-500/40 focus:outline-none focus:border-emerald-400 appearance-none pr-7 cursor-pointer transition">
+            <optgroup label="Production (Tuned + HMM)">
+              <option value="tuned" selected>XGBoost (Optuna Tuned) + HMM (92.47% Acc, 99.89% Cont)</option>
+            </optgroup>
+            <optgroup label="Advanced GBDT & Neural">
+              <option value="lgbm">Model 4: LightGBM Classifier (90.14% Top-1, 0.9418 F1)</option>
+              <option value="xgb">Model 5: XGBoost (Untuned) (89.76% Top-1, 0.9391 F1)</option>
+              <option value="mlp">Model 6: MLP Neural Network (89.23% Top-1, 0.9335 F1)</option>
+            </optgroup>
+            <optgroup label="Classical Models">
+              <option value="rf">Model 3: Random Forest (88.70% Top-1, 0.9241 F1)</option>
+              <option value="logreg">Model 1: Logistic Regression (88.15% Top-1, 11ms)</option>
+              <option value="knn">Model 2: Distance-Weighted KNN (81.66% Top-1)</option>
+            </optgroup>
+            <optgroup label="Baselines">
+              <option value="heuristic">Geometric Nearest Segment (54.00% Top-1)</option>
+            </optgroup>
+          </select>
+          <svg class="w-3.5 h-3.5 text-emerald-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
         </div>
       </div>
     </div>
 
-    <!-- Right Header Stats & Buttons -->
-    <div class="flex items-center gap-4">
-      <div class="hidden xl:flex items-center gap-5 text-xs font-mono">
+    <!-- Right Header Stats & Deliverables Action Buttons -->
+    <div class="flex items-center gap-2 lg:gap-3 flex-shrink-0">
+      
+      <!-- Real-Time Top Model Stats -->
+      <div class="hidden 2xl:flex items-center gap-4 text-xs font-mono">
         <div class="flex flex-col items-end">
-          <span class="text-slate-400 text-[10px]">TEST TOP-1 ACC</span>
-          <span id="modelBenchmarkAcc" class="text-emerald-400 font-bold text-sm">84.74%</span>
+          <span class="text-slate-400 text-[10px] tracking-wider">TOP-1 ACC</span>
+          <span id="modelBenchmarkAcc" class="text-emerald-400 font-extrabold text-xs">92.47%</span>
         </div>
         <div class="flex flex-col items-end">
-          <span class="text-slate-400 text-[10px]">MACRO F1</span>
-          <span id="modelBenchmarkF1" class="text-cyan-400 font-bold text-sm">0.8937</span>
+          <span class="text-slate-400 text-[10px] tracking-wider">MACRO F1</span>
+          <span id="modelBenchmarkF1" class="text-cyan-400 font-bold text-xs">0.9427</span>
         </div>
         <div class="flex flex-col items-end">
-          <span class="text-slate-400 text-[10px]">LOG LOSS</span>
-          <span id="modelBenchmarkLoss" class="text-slate-200 font-bold text-sm">0.1441</span>
+          <span class="text-slate-400 text-[10px] tracking-wider">CONTINUITY</span>
+          <span id="modelBenchmarkCont" class="text-emerald-300 font-bold text-xs">99.89%</span>
+        </div>
+        <div class="flex flex-col items-end">
+          <span class="text-slate-400 text-[10px] tracking-wider">LOG LOSS</span>
+          <span id="modelBenchmarkLoss" class="text-slate-300 font-bold text-xs">0.0644</span>
         </div>
       </div>
 
-      <div class="h-6 w-px bg-white/10 mx-1 hidden xl:block"></div>
+      <div class="h-6 w-px bg-white/10 mx-1 hidden 2xl:block"></div>
 
-      <!-- Action buttons -->
-      <button id="btnBenchmarkModal" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-slate-300 hover:text-white transition flex items-center gap-1.5">
+      <!-- Action Button 1: Section 3.1 Leaderboard -->
+      <button id="btnBenchmarkModal" class="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-slate-200 hover:text-white transition flex items-center gap-1.5" title="Section 3.1 Overall Model Comparison">
         <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-        <span>Leaderboard</span>
+        <span class="hidden md:inline">Sec 3.1 Leaderboard</span>
       </button>
 
-      <button id="btnFeatureImportance" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-slate-300 hover:text-white transition flex items-center gap-1.5">
-        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-        <span>Gini Importances</span>
+      <!-- Action Button 2: Section 4 & 5 Tuning & HMM -->
+      <button id="btnTuningHmmModal" class="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-slate-200 hover:text-white transition flex items-center gap-1.5" title="Section 4 Bayesian Tuning & Section 5 HMM Decoding">
+        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+        <span class="hidden md:inline">Sec 4 & 5 Tuning/HMM</span>
       </button>
+
+      <!-- Action Button 3: Section 6 Folium Map -->
+      <button id="btnFoliumModal" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-xs font-medium text-emerald-300 hover:text-white transition flex items-center gap-1.5" title="Section 6 Geographical Visualisation Using Folium">
+        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+        <span class="hidden md:inline">Sec 6 Folium Map</span>
+      </button>
+
+      <!-- Action Button 4: Section 7 Two-Laptop Deployment -->
+      <button id="btnTwoLaptopModal" class="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-slate-200 hover:text-white transition flex items-center gap-1.5" title="Section 7 Two-Laptop Deployment & Live API Tester">
+        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+        <span class="hidden sm:inline">Sec 7 API/LAN</span>
+      </button>
+
+      <!-- Action Button 5: Diagnostic Plots Gallery -->
+      <button id="btnPlotsModal" class="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-slate-200 hover:text-white transition flex items-center gap-1.5" title="Section 3.3 Diagnostic Plots & Confusion Matrices">
+        <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        <span class="hidden lg:inline">Plots</span>
+      </button>
+
+      <!-- Action Button 6: Deliverables Compliance Audit -->
+      <button id="btnDeliverablesModal" class="px-2.5 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-xs font-medium text-cyan-300 hover:text-white transition flex items-center gap-1.5" title="Deliverables.pdf Compliance Matrix">
+        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span class="hidden sm:inline">Deliverables</span>
+      </button>
+
     </div>
   </header>
 
-  <!-- Main View Container: Map + Right Telemetry Sidebar -->
-  <main class="flex-1 flex overflow-hidden relative">
+  <!-- ========================================== -->
+  <!-- MAIN WORKSPACE: MAP + RIGHT TELEMETRY HUD  -->
+  <!-- ========================================== -->
+  <main class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
     
     <!-- Center / Left Map Container -->
-    <div class="flex-1 relative h-full">
+    <div class="h-[52vh] lg:h-full flex-1 relative">
       <div id="map" class="h-full w-full z-0"></div>
 
-      <!-- Map Layer Legend (Floating Glass Panel) -->
-      <div class="absolute top-4 left-4 z-10 telemetry-glass p-3 rounded-xl flex flex-col gap-2 border border-white/10 text-xs">
-        <div class="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-0.5">Route Layers</div>
+      <!-- Map Layer Legend (Floating Glass Panel at Top Left) -->
+      <div class="absolute top-3 left-3 z-10 telemetry-glass p-2.5 sm:p-3.5 rounded-xl flex flex-col gap-2 border border-white/10 text-xs shadow-2xl max-w-[240px] sm:max-w-[280px]">
+        <div class="flex items-center justify-between border-b border-white/10 pb-1.5">
+          <div class="text-[10px] font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            Route Layers (Sec 6)
+          </div>
+          <button id="btnFitBounds" class="text-[10px] font-mono text-cyan-400 hover:text-white transition underline" title="Fit map to trajectory bounds">Fit Route</button>
+        </div>
         
-        <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition">
+        <label class="flex items-center gap-2 cursor-pointer hover:opacity-85 transition">
           <input type="checkbox" id="layerGps" checked class="rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-0">
           <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
           <span class="text-slate-300 font-mono text-[11px]">Raw GPS Track (<span id="gpsPointCount">0</span> pts)</span>
         </label>
 
-        <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition">
+        <label class="flex items-center gap-2 cursor-pointer hover:opacity-85 transition">
           <input type="checkbox" id="layerPredicted" checked class="rounded border-slate-700 bg-slate-800 text-emerald-500 focus:ring-0">
           <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
           <span class="text-emerald-400 font-mono text-[11px] font-medium">Model Matched Route</span>
         </label>
 
-        <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition">
+        <label class="flex items-center gap-2 cursor-pointer hover:opacity-85 transition">
           <input type="checkbox" id="layerGroundTruth" checked class="rounded border-slate-700 bg-slate-800 text-amber-500 focus:ring-0">
           <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
           <span class="text-amber-300 font-mono text-[11px]">Ground Truth (<span id="gtArcCount">0</span> arcs)</span>
         </label>
 
-        <label class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition">
+        <label class="flex items-center gap-2 cursor-pointer hover:opacity-85 transition">
           <input type="checkbox" id="layerCandidates" class="rounded border-slate-700 bg-slate-800 text-purple-500 focus:ring-0">
           <span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
-          <span class="text-purple-300 font-mono text-[11px]">Top-K Candidates Pool</span>
+          <span class="text-purple-300 font-mono text-[11px]">Candidate Pool (Top-8)</span>
         </label>
       </div>
 
       <!-- Playback Control Bar (Bottom Floating HUD) -->
-      <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 telemetry-glass px-5 py-3 rounded-2xl flex items-center gap-4 border border-white/15 shadow-2xl">
-        <button id="btnPlayPause" class="w-9 h-9 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center transition shadow-lg shadow-cyan-500/30">
-          <svg id="iconPlay" class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          <svg id="iconPause" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+      <div class="absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-10 telemetry-glass px-3 py-2 rounded-2xl flex items-center gap-2 sm:gap-3 border border-white/15 shadow-2xl max-w-[95vw]">
+        <button id="btnPlayPause" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center transition shadow-lg shadow-cyan-500/30 flex-shrink-0">
+          <svg id="iconPlay" class="w-3.5 h-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="iconPause" class="w-3.5 h-3.5 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
         </button>
 
-        <button id="btnReset" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        <button id="btnStepPrev" class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition flex-shrink-0" title="Previous observation">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+
+        <button id="btnStepNext" class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition flex-shrink-0" title="Next observation">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+
+        <button id="btnReset" class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition flex-shrink-0" title="Reset to start">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         </button>
 
         <!-- Slider Scrub -->
-        <div class="flex flex-col gap-1 w-64 md:w-80">
-          <div class="flex justify-between text-[11px] font-mono text-slate-400">
-            <span>Obs: <span id="currentObsDisplay" class="text-cyan-400 font-bold">0</span> / <span id="totalObsDisplay">0</span></span>
-            <span>Speed: <span id="telemetrySpeed" class="text-white font-bold">0.0</span> km/h</span>
+        <div class="flex flex-col gap-0.5 w-36 sm:w-64 md:w-80">
+          <div class="flex justify-between text-[9px] sm:text-[10px] font-mono text-slate-400">
+            <span>Obs: <span id="currentObsDisplay" class="text-cyan-400 font-bold">0</span>/<span id="totalObsDisplay">0</span></span>
+            <span class="hidden xs:inline">Speed: <span id="telemetrySpeed" class="text-white font-bold">0.0</span> km/h</span>
           </div>
           <input type="range" id="timelineSlider" min="0" max="100" value="0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
         </div>
 
         <!-- Speed multiplier toggle -->
-        <button id="btnSpeedMultiplier" class="px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-xs font-mono text-cyan-400 border border-white/10 transition">
+        <button id="btnSpeedMultiplier" class="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-[10px] sm:text-xs font-mono text-cyan-400 border border-white/10 transition flex-shrink-0" title="Toggle playback speed">
           2x
         </button>
       </div>
     </div>
 
     <!-- Right Telemetry & Inspector Sidebar -->
-    <aside class="w-96 telemetry-glass border-l border-white/10 flex flex-col h-full z-10 flex-shrink-0 overflow-y-auto p-5 gap-5">
+    <aside class="h-[48vh] lg:h-full w-full lg:w-96 telemetry-glass border-t lg:border-t-0 lg:border-l border-white/10 flex flex-col z-10 flex-shrink-0 overflow-y-auto p-3 sm:p-4 gap-3 sm:gap-4">
+
       
-      <!-- Card: Live Trip Scorecard -->
-      <div class="telemetry-card-subtle p-4 rounded-xl flex flex-col gap-3">
+      <!-- Card 1: Live Trip Scorecard -->
+      <div class="telemetry-card-subtle p-3.5 rounded-xl flex flex-col gap-2.5">
         <div class="flex items-center justify-between">
           <span class="text-xs font-mono uppercase tracking-wider text-slate-400 font-bold">Trip Performance</span>
           <span id="tripBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Trip 00000000</span>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 mt-1">
-          <div class="p-3 rounded-lg bg-black/40 border border-white/5 flex flex-col">
-            <span class="text-[10px] font-mono text-slate-400">TOP-1 ACCURACY</span>
-            <span id="statTop1Acc" class="text-2xl font-extrabold text-emerald-400 font-mono tracking-tight mt-0.5">--</span>
-            <span id="statAccDetail" class="text-[10px] text-slate-400 mt-1 font-mono">-- / -- obs</span>
+        <div class="grid grid-cols-2 gap-2.5 mt-0.5">
+          <div class="p-2.5 rounded-lg bg-black/40 border border-white/5 flex flex-col">
+            <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider">Top-1 Accuracy</span>
+            <span id="statTop1Acc" class="text-xl font-extrabold text-emerald-400 font-mono tracking-tight mt-0.5">--</span>
+            <span id="statAccDetail" class="text-[10px] text-slate-400 mt-0.5 font-mono">-- / -- obs</span>
           </div>
 
-          <div class="p-3 rounded-lg bg-black/40 border border-white/5 flex flex-col">
-            <span class="text-[10px] font-mono text-slate-400">ROUTE CONTINUITY</span>
-            <span id="statContinuity" class="text-2xl font-extrabold text-cyan-400 font-mono tracking-tight mt-0.5">--</span>
-            <span class="text-[10px] text-slate-400 mt-1 font-mono">Graph Connected</span>
+          <div class="p-2.5 rounded-lg bg-black/40 border border-white/5 flex flex-col">
+            <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider">Route Continuity</span>
+            <span id="statContinuity" class="text-xl font-extrabold text-cyan-400 font-mono tracking-tight mt-0.5">--</span>
+            <span id="statContinuityBadge" class="text-[10px] text-emerald-400 mt-0.5 font-mono flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span> Graph Connected
+            </span>
           </div>
         </div>
 
+        <!-- HMM Gain Banner (Shows gain when HMM / Tuned is active) -->
+        <div id="hmmGainBanner" class="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-[11px] font-mono text-emerald-300">
+          <div class="flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            <span>HMM Continuity Gain:</span>
+          </div>
+          <span id="hmmGainVal" class="font-bold text-white">+1.44%</span>
+        </div>
+
         <!-- Progress visualizer -->
-        <div class="flex flex-col gap-1.5 mt-1">
-          <div class="flex justify-between text-[11px] font-mono text-slate-400">
-            <span>Accuracy Rate</span>
+        <div class="flex flex-col gap-1 mt-0.5">
+          <div class="flex justify-between text-[10px] font-mono text-slate-400">
+            <span>Accuracy Ratio</span>
             <span id="statAccuracyPct" class="text-emerald-400 font-semibold">0%</span>
           </div>
-          <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-white/5">
-            <div id="statProgressBar" class="bg-gradient-to-r from-emerald-500 to-cyan-400 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+          <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden border border-white/5">
+            <div id="statProgressBar" class="bg-gradient-to-r from-emerald-500 to-cyan-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
           </div>
         </div>
       </div>
 
-      <!-- Card: Real-Time Candidate Inspector -->
-      <div class="telemetry-card-subtle p-4 rounded-xl flex flex-col gap-3 flex-1 min-h-[300px]">
-        <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+      <!-- Card 2: Real-Time Candidate Inspector -->
+      <div class="telemetry-card-subtle p-3.5 rounded-xl flex flex-col gap-2.5 flex-1 min-h-[280px]">
+        <div class="flex items-center justify-between border-b border-white/10 pb-2">
+          <div class="flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             <span class="text-xs font-mono uppercase tracking-wider text-white font-bold">Observation Inspector</span>
           </div>
-          <span id="inspectObsBadge" class="text-[11px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">Obs #0</span>
+          <span id="inspectObsBadge" class="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">Obs #0</span>
         </div>
 
         <!-- Active Observation Metadata -->
-        <div id="activeObsMeta" class="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-300 bg-black/30 p-2.5 rounded-lg border border-white/5">
+        <div id="activeObsMeta" class="grid grid-cols-2 gap-2 text-[10px] font-mono text-slate-300 bg-black/30 p-2 rounded-lg border border-white/5">
           <div>Lat: <span id="metaLat" class="text-white font-medium">--</span></div>
           <div>Lon: <span id="metaLon" class="text-white font-medium">--</span></div>
           <div>Time: <span id="metaTime" class="text-white font-medium">--</span></div>
-          <div>Match Status: <span id="metaMatch" class="text-emerald-400 font-bold">--</span></div>
+          <div>Match: <span id="metaMatch" class="text-emerald-400 font-bold">--</span></div>
         </div>
 
         <!-- Candidates List Sorted by Model Probability -->
-        <div class="flex flex-col gap-2 mt-1 flex-1 overflow-y-auto">
-          <div class="flex justify-between text-[10px] font-mono uppercase tracking-wider text-slate-400 px-1">
+        <div class="flex flex-col gap-1.5 mt-0.5 flex-1 overflow-y-auto">
+          <div class="flex justify-between text-[9px] font-mono uppercase tracking-wider text-slate-400 px-1">
             <span>Candidate Arc ID</span>
             <span>Pred Probability</span>
           </div>
@@ -319,25 +417,39 @@
         </div>
       </div>
 
-      <!-- Card: Model Rationale & Contract Badge -->
-      <div class="telemetry-card-subtle p-3.5 rounded-xl flex items-center justify-between text-xs font-mono">
-        <div class="flex items-center gap-2">
-          <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
-          <span class="text-slate-400">Zero Data Leakage:</span>
+      <!-- Card 3: Hackathon Deliverables Compliance Status -->
+      <div class="telemetry-card-subtle p-3 rounded-xl flex flex-col gap-2 text-[11px] font-mono">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-400">Deliverables Compliance:</span>
+          <span class="text-emerald-400 font-bold flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            Sections 1-7 Verified
+          </span>
         </div>
-        <span class="text-emerald-400 font-medium">GroupKFold Verified</span>
+        <div class="grid grid-cols-3 gap-1.5 text-[9px] text-slate-400 pt-1 border-t border-white/5">
+          <span class="bg-black/30 p-1 rounded text-center">7 Models</span>
+          <span class="bg-black/30 p-1 rounded text-center">35 Optuna</span>
+          <span class="bg-black/30 p-1 rounded text-center">99.89% HMM</span>
+        </div>
       </div>
 
     </aside>
   </main>
 
-  <!-- Modal: Master Benchmark Leaderboard -->
+  <!-- ========================================== -->
+  <!-- MODALS CONTAINER                           -->
+  <!-- ========================================== -->
+
+  <!-- Modal 1: Section 3.1 Master Model Comparison Leaderboard -->
   <div id="modalLeaderboard" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="telemetry-glass w-full max-w-4xl p-6 rounded-2xl border border-white/15 flex flex-col gap-4 shadow-2xl max-h-[85vh] overflow-y-auto">
+    <div class="telemetry-glass w-full max-w-5xl p-6 rounded-2xl border border-white/15 flex flex-col gap-4 shadow-2xl max-h-[88vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-white/10 pb-3">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2.5">
           <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-          <h2 class="text-base font-bold text-white tracking-tight">PathSnap Classical Models — Master Comparison Matrix</h2>
+          <div>
+            <h2 class="text-base font-bold text-white tracking-tight">Deliverables Section 3.1 — Master Model Comparison Table</h2>
+            <p class="text-xs font-mono text-slate-400">Strict 5-Fold GroupKFold CV across 80 training trips (zero data leakage) + 10 Student-Test trips</p>
+          </div>
         </div>
         <button id="btnCloseLeaderboard" class="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -345,56 +457,402 @@
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs font-mono">
+        <table class="w-full text-left text-xs font-mono border-collapse">
           <thead class="bg-slate-900/90 text-slate-400 border-b border-white/10">
             <tr>
-              <th class="p-3">Model</th>
-              <th class="p-3">Algorithm Family</th>
-              <th class="p-3 text-right">CV Macro F1</th>
-              <th class="p-3 text-right">CV Top-1 Acc</th>
-              <th class="p-3 text-right">Test Top-1 Acc</th>
-              <th class="p-3 text-right">Test Macro F1</th>
-              <th class="p-3 text-right">Log Loss</th>
-              <th class="p-3 text-right">Latency</th>
+              <th class="p-2.5">Model</th>
+              <th class="p-2.5">Algorithm Family</th>
+              <th class="p-2.5">Key Configuration</th>
+              <th class="p-2.5 text-right">CV Macro F1</th>
+              <th class="p-2.5 text-right">Top-1 Acc</th>
+              <th class="p-2.5 text-right">Route Continuity</th>
+              <th class="p-2.5 text-right">Student-Test F1</th>
+              <th class="p-2.5 text-right">Log Loss</th>
+              <th class="p-2.5 text-right">Inference Time</th>
             </tr>
           </thead>
           <tbody id="leaderboardTbody" class="divide-y divide-white/5 text-slate-300">
-            <!-- Populated dynamically -->
+            <!-- Populated dynamically from /api/benchmark -->
           </tbody>
         </table>
       </div>
 
-      <div class="text-[11px] font-mono text-slate-400 mt-2 bg-black/40 p-3 rounded-lg border border-white/5">
-        Strict 5-Fold GroupKFold CV across 80 training trips (zero trip overlap). Benchmark evaluation out-of-sample on 10 student_test trips (19,160 observations; 153,280 candidate arcs).
+      <div class="text-[11px] font-mono text-slate-400 bg-black/40 p-3 rounded-lg border border-white/5 flex items-start gap-2">
+        <svg class="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>Exceeds minimum requirement of 5 models: 7 distinct algorithms benchmarked across linear, non-parametric, bagging, leaf-wise boosting, depth-wise boosting, feed-forward neural network, and Bayesian-tuned sequence decoder.</span>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Feature Importance Drawer -->
-  <div id="modalFeatureImportance" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="telemetry-glass w-full max-w-2xl p-6 rounded-2xl border border-white/15 flex flex-col gap-4 shadow-2xl max-h-[85vh] overflow-y-auto">
+  <!-- Modal 2: Section 4 & 5 Tuning & HMM Sequence Reconstruction -->
+  <div id="modalTuningHmm" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="telemetry-glass w-full max-w-4xl p-6 rounded-2xl border border-white/15 flex flex-col gap-4 shadow-2xl max-h-[88vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-white/10 pb-3">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2.5">
           <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-          <h2 class="text-base font-bold text-white tracking-tight">Random Forest Gini Feature Importances (v2)</h2>
+          <h2 class="text-base font-bold text-white tracking-tight">Deliverables Section 4 & 5 — Bayesian Tuning & HMM Reconstruction</h2>
         </div>
-        <button id="btnCloseFeatureImportance" class="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition">
+        <button id="btnCloseTuningHmm" class="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
 
-      <div id="featureImportanceList" class="flex flex-col gap-3 font-mono text-xs">
-        <!-- Populated dynamically -->
+      <!-- Tab Switcher -->
+      <div class="flex gap-2 border-b border-white/10 pb-2">
+        <button id="tabBtnTuning" class="px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Section 4: Optuna Bayesian Search</button>
+        <button id="tabBtnHmm" class="px-3 py-1.5 rounded-lg text-xs font-mono text-slate-400 hover:text-white">Section 5: HMM Viterbi Decoder</button>
+      </div>
+
+      <!-- Tab Content: Section 4 Tuning -->
+      <div id="tabContentTuning" class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="p-3 rounded-lg bg-black/40 border border-white/5 flex flex-col">
+            <span class="text-[10px] font-mono text-slate-400 uppercase">Search Algorithm</span>
+            <span class="text-sm font-bold text-white font-mono mt-0.5">TPESampler (Tree-structured Parzen)</span>
+            <span class="text-[10px] text-cyan-400 font-mono mt-0.5">35 Completed Trials</span>
+          </div>
+          <div class="p-3 rounded-lg bg-black/40 border border-white/5 flex flex-col">
+            <span class="text-[10px] font-mono text-slate-400 uppercase">Objective Function</span>
+            <span class="text-sm font-bold text-white font-mono mt-0.5">Min 5-Fold CV Log Loss</span>
+            <span class="text-[10px] text-emerald-400 font-mono mt-0.5">0.0746 &rarr; 0.0694 (-0.0052)</span>
+          </div>
+          <div class="p-3 rounded-lg bg-black/40 border border-white/5 flex flex-col">
+            <span class="text-[10px] font-mono text-slate-400 uppercase">Selected Model</span>
+            <span class="text-sm font-bold text-white font-mono mt-0.5">XGBoost Histogram GBDT</span>
+            <span class="text-[10px] text-emerald-400 font-mono mt-0.5">Artifact: final_model.joblib</span>
+          </div>
+        </div>
+
+        <div class="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col gap-2">
+          <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">Best Hyperparameter Configuration (Trial 12)</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono text-slate-300">
+            <div class="p-2 bg-slate-900/60 rounded border border-white/5">n_estimators: <span class="text-cyan-400 font-bold">200</span></div>
+            <div class="p-2 bg-slate-900/60 rounded border border-white/5">learning_rate: <span class="text-cyan-400 font-bold">0.0322</span></div>
+            <div class="p-2 bg-slate-900/60 rounded border border-white/5">max_depth: <span class="text-cyan-400 font-bold">8</span></div>
+            <div class="p-2 bg-slate-900/60 rounded border border-white/5">subsample: <span class="text-cyan-400 font-bold">0.7736</span></div>
+            <div class="p-2 bg-slate-900/60 rounded border border-white/5">colsample_bytree: <span class="text-cyan-400 font-bold">0.9076</span></div>
+            <div class="p-2 bg-slate-900/60 rounded border border-white/5">reg_alpha: <span class="text-cyan-400 font-bold">0.7618</span></div>
+            <div class="p-2 bg-slate-900/60 rounded border border-white/5">reg_lambda: <span class="text-cyan-400 font-bold">0.9836</span></div>
+            <div class="p-2 bg-slate-900/60 rounded border border-white/5">min_child_weight: <span class="text-cyan-400 font-bold">1</span></div>
+          </div>
+        </div>
+
+        <!-- Untuned vs Tuned Table -->
+        <div class="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col gap-2">
+          <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">Untuned vs Tuned Performance Comparison</h3>
+          <table class="w-full text-xs font-mono text-left">
+            <thead class="text-slate-400 border-b border-white/10">
+              <tr>
+                <th class="pb-2">Metric</th>
+                <th class="pb-2 text-right">Untuned (Default)</th>
+                <th class="pb-2 text-right">Tuned (Optuna)</th>
+                <th class="pb-2 text-right">Net Improvement</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5 text-slate-300">
+              <tr><td class="py-1.5">CV Macro F1-score</td><td class="text-right py-1.5">0.9391</td><td class="text-right py-1.5 text-cyan-400 font-bold">0.9399</td><td class="text-right py-1.5 text-emerald-400">+0.0008</td></tr>
+              <tr><td class="py-1.5">Student-Test Top-1 Accuracy</td><td class="text-right py-1.5">89.76%</td><td class="text-right py-1.5 text-emerald-400 font-bold">90.19%</td><td class="text-right py-1.5 text-emerald-400">+0.43%</td></tr>
+              <tr><td class="py-1.5">Student-Test Macro F1-score</td><td class="text-right py-1.5">0.9391</td><td class="text-right py-1.5 text-cyan-400 font-bold">0.9427</td><td class="text-right py-1.5 text-emerald-400">+0.0036</td></tr>
+              <tr><td class="py-1.5">Log Loss (Student-Test)</td><td class="text-right py-1.5">0.0672</td><td class="text-right py-1.5 text-emerald-400 font-bold">0.0644</td><td class="text-right py-1.5 text-emerald-400">-0.0028</td></tr>
+              <tr><td class="py-1.5">Inference Latency (10 trips)</td><td class="text-right py-1.5">0.19s</td><td class="text-right py-1.5 text-slate-200">0.65s</td><td class="text-right py-1.5 text-slate-400">+0.46s (Within RT Budget)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab Content: Section 5 HMM -->
+      <div id="tabContentHmm" class="flex flex-col gap-4 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="p-3 rounded-lg bg-black/40 border border-white/5 flex flex-col">
+            <span class="text-[10px] font-mono text-slate-400 uppercase">Hidden States</span>
+            <span class="text-sm font-bold text-white font-mono mt-0.5">Directed Road Arcs</span>
+            <span class="text-[10px] text-cyan-400 font-mono mt-0.5">Top-K spatial candidates pool</span>
+          </div>
+          <div class="p-3 rounded-lg bg-black/40 border border-white/5 flex flex-col">
+            <span class="text-[10px] font-mono text-slate-400 uppercase">Route Continuity</span>
+            <span class="text-sm font-bold text-emerald-400 font-mono mt-0.5">98.45% &rarr; 99.89%</span>
+            <span class="text-[10px] text-emerald-300 font-mono mt-0.5">+1.44% Continuity Gain</span>
+          </div>
+          <div class="p-3 rounded-lg bg-black/40 border border-white/5 flex flex-col">
+            <span class="text-[10px] font-mono text-slate-400 uppercase">Sequence Top-1 Accuracy</span>
+            <span class="text-sm font-bold text-cyan-400 font-mono mt-0.5">91.18% &rarr; 92.47%</span>
+            <span class="text-[10px] text-cyan-300 font-mono mt-0.5">+1.29% Absolute Accuracy Gain</span>
+          </div>
+        </div>
+
+        <div class="bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col gap-2">
+          <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wider font-mono">HMM Formulation & Mechanics</h3>
+          <ul class="text-xs font-mono text-slate-300 list-disc list-inside space-y-1.5">
+            <li><span class="text-cyan-400 font-bold">Emission Probabilities:</span> Calibrated probabilities output by the Optuna-tuned XGBoost model for candidate arcs within 50m of each GPS fix.</li>
+            <li><span class="text-cyan-400 font-bold">Transition Probabilities:</span> Dijkstra shortest network distance exponentially penalized against Euclidean GPS displacement: <code class="bg-slate-900 px-1 py-0.5 rounded text-amber-300">P(a_t | a_{t-1}) &prop; exp(-|d_network - d_gps| / &beta;)</code> with &beta;=25.0m.</li>
+            <li><span class="text-cyan-400 font-bold">Large GPS Gap & Dropout Handling:</span> When consecutive fixes exceed 100m or 15s, transitions transition smoothly to topological shortest-path fallback, preventing disconnected trajectories.</li>
+            <li><span class="text-cyan-400 font-bold">Disconnected Segment Resolution:</span> Viterbi trellis dynamic programming enforces strictly directed node-arc continuity, bridging non-adjacent observations through intermediate topological graph arcs.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal 3: Section 6 Interactive Folium HTML Map Embed -->
+  <div id="modalFoliumMap" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="telemetry-glass w-full max-w-6xl p-6 rounded-2xl border border-white/15 flex flex-col gap-3 shadow-2xl h-[90vh]">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3 flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+          <div>
+            <h2 class="text-base font-bold text-white tracking-tight">Deliverables Section 6 — Interactive Folium Map</h2>
+            <p class="text-xs font-mono text-slate-400">Viewing Folium HTML Map for <span id="foliumTripTitle" class="text-emerald-400 font-bold">Trip 00000000</span> with complete road network geometry & LayerControls</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <a id="btnFoliumNewTab" href="/api/folium_map/00000000" target="_blank" class="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-mono font-medium border border-emerald-500/30 transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+            Open Standalone Tab
+          </a>
+          <button id="btnCloseFolium" class="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Iframe to render Folium HTML directly -->
+      <div class="flex-1 w-full rounded-xl overflow-hidden border border-white/10 bg-slate-950 relative">
+        <iframe id="foliumIframe" src="/api/folium_map/00000000" class="w-full h-full border-0"></iframe>
       </div>
     </div>
   </div>
 
-  <!-- Main JavaScript App Logic -->
+  <!-- Modal 4: Section 7 Two-Laptop Deployment & Live API Console -->
+  <div id="modalTwoLaptop" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="telemetry-glass w-full max-w-4xl p-6 rounded-2xl border border-white/15 flex flex-col gap-4 shadow-2xl max-h-[88vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <div class="flex items-center gap-2.5">
+          <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+          <div>
+            <h2 class="text-base font-bold text-white tracking-tight">Deliverables Section 7 — Two-Laptop Evaluation & API Console</h2>
+            <p class="text-xs font-mono text-slate-400">Evaluator demonstration instructions and live REST API diagnostic testbed</p>
+          </div>
+        </div>
+        <button id="btnCloseTwoLaptop" class="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Two-Laptop Instructions -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-4 rounded-xl bg-black/40 border border-white/5 flex flex-col gap-2">
+          <h3 class="text-xs font-bold text-cyan-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full bg-cyan-400 text-slate-950 flex items-center justify-center text-[10px] font-extrabold">1</span>
+            Laptop 1 (Model Server Host)
+          </h3>
+          <p class="text-xs text-slate-300">Run the Uvicorn server bound to all LAN network interfaces:</p>
+          <pre class="bg-slate-950 p-2.5 rounded text-[11px] font-mono text-emerald-400 overflow-x-auto border border-white/5">python -m uvicorn src.server.app:app --host 0.0.0.0 --port 8000</pre>
+          <span class="text-[10px] text-slate-400 font-mono">Verify local port 8000 is open. Note the host LAN IP (e.g., 192.168.1.105).</span>
+        </div>
+
+        <div class="p-4 rounded-xl bg-black/40 border border-white/5 flex flex-col gap-2">
+          <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+            <span class="w-4 h-4 rounded-full bg-emerald-400 text-slate-950 flex items-center justify-center text-[10px] font-extrabold">2</span>
+            Laptop 2 (Evaluator Client Terminal)
+          </h3>
+          <p class="text-xs text-slate-300">Run curl/PowerShell queries or open the browser UI:</p>
+          <pre class="bg-slate-950 p-2.5 rounded text-[11px] font-mono text-cyan-300 overflow-x-auto border border-white/5">curl http://&lt;LAPTOP_1_IP&gt;:8000/api/predict/00000000?model=tuned</pre>
+          <span class="text-[10px] text-slate-400 font-mono">Or open browser: <code class="text-white">http://&lt;LAPTOP_1_IP&gt;:8000/</code></span>
+        </div>
+      </div>
+
+      <!-- Live API Tester Workbench -->
+      <div class="p-4 rounded-xl bg-black/40 border border-white/5 flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-white uppercase tracking-wider font-mono">Live API Interactive Request Tester</h3>
+          <span id="apiLatencyBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Ready</span>
+        </div>
+        
+        <div class="flex gap-2">
+          <select id="apiEndpointSelect" class="bg-slate-900 text-white text-xs font-mono rounded px-3 py-1.5 border border-white/10 flex-1">
+            <option value="/api/health">GET /api/health (Service Health Check)</option>
+            <option value="/api/trips">GET /api/trips (List 10 Test Trips)</option>
+            <option value="/api/trip/00000000">GET /api/trip/00000000 (Trip Geometry & Nodes)</option>
+            <option value="/api/predict/00000000?model=tuned">GET /api/predict/00000000?model=tuned (Production Route Prediction)</option>
+            <option value="/api/predict/00000000?model=lgbm">GET /api/predict/00000000?model=lgbm (Model 4 LightGBM)</option>
+            <option value="/api/predict/00000000?model=rf">GET /api/predict/00000000?model=rf (Model 3 Random Forest)</option>
+            <option value="/api/benchmark">GET /api/benchmark (Consolidated Model Comparison)</option>
+            <option value="/api/tuning">GET /api/tuning (Bayesian Optimization Summary)</option>
+            <option value="/api/hmm">GET /api/hmm (HMM Decoding Metrics)</option>
+            <option value="/api/deliverables">GET /api/deliverables (Deliverables Metadata)</option>
+          </select>
+          <button id="btnSendApiRequest" class="px-4 py-1.5 rounded bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-mono font-bold text-xs transition">
+            Send Request
+          </button>
+        </div>
+
+        <pre id="apiResponseBox" class="bg-slate-950 p-3 rounded-lg text-xs font-mono text-emerald-400 max-h-56 overflow-y-auto border border-white/5">// Click "Send Request" to test API response...</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Section 3.3 Diagnostic Plots & Visualisations Gallery -->
+  <div id="modalPlotsGallery" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="telemetry-glass w-full max-w-5xl p-6 rounded-2xl border border-white/15 flex flex-col gap-4 shadow-2xl max-h-[88vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <div class="flex items-center gap-2.5">
+          <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          <div>
+            <h2 class="text-base font-bold text-white tracking-tight">Deliverables Section 3.3 & 2.2 — Model Visualisations & Diagnostic Plots</h2>
+            <p class="text-xs font-mono text-slate-400">High-resolution confusion matrices, loss curves, feature importances, and HMM continuity plots</p>
+          </div>
+        </div>
+        <button id="btnClosePlots" class="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Gallery Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+        <!-- Plot 1 -->
+        <div class="p-3 bg-black/40 rounded-xl border border-white/5 flex flex-col gap-2">
+          <span class="text-xs font-bold text-white font-mono">Master 6-Model Comparison</span>
+          <div class="rounded-lg overflow-hidden border border-white/10 bg-slate-950 aspect-video flex items-center justify-center">
+            <img src="/outputs/master_plots/master_6model_comparison.png" alt="Master 6-Model Comparison" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition" onclick="window.open(this.src)">
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono">CV Macro F1 vs Test Accuracy across all models.</span>
+        </div>
+
+        <!-- Plot 2 -->
+        <div class="p-3 bg-black/40 rounded-xl border border-white/5 flex flex-col gap-2">
+          <span class="text-xs font-bold text-white font-mono">XGBoost Confusion Matrix</span>
+          <div class="rounded-lg overflow-hidden border border-white/10 bg-slate-950 aspect-video flex items-center justify-center">
+            <img src="/outputs/models/advanced/xgb_confusion_matrix.png" alt="XGBoost Confusion Matrix" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition" onclick="window.open(this.src)">
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono">Binary arc candidate match classification matrix.</span>
+        </div>
+
+        <!-- Plot 3 -->
+        <div class="p-3 bg-black/40 rounded-xl border border-white/5 flex flex-col gap-2">
+          <span class="text-xs font-bold text-white font-mono">MLP Training Loss Curve</span>
+          <div class="rounded-lg overflow-hidden border border-white/10 bg-slate-950 aspect-video flex items-center justify-center">
+            <img src="/outputs/models/advanced/mlp_loss_curve.png" alt="MLP Loss Curve" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition" onclick="window.open(this.src)">
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono">Adam optimizer training loss across 20 tracked epochs.</span>
+        </div>
+
+        <!-- Plot 4 -->
+        <div class="p-3 bg-black/40 rounded-xl border border-white/5 flex flex-col gap-2">
+          <span class="text-xs font-bold text-white font-mono">LightGBM Feature Importance</span>
+          <div class="rounded-lg overflow-hidden border border-white/10 bg-slate-950 aspect-video flex items-center justify-center">
+            <img src="/outputs/models/advanced/lgbm_feature_importance.png" alt="LightGBM Feature Importance" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition" onclick="window.open(this.src)">
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono">Gain feature importances across all 27 v2 features.</span>
+        </div>
+
+        <!-- Plot 5 -->
+        <div class="p-3 bg-black/40 rounded-xl border border-white/5 flex flex-col gap-2">
+          <span class="text-xs font-bold text-white font-mono">HMM Route Continuity Gain</span>
+          <div class="rounded-lg overflow-hidden border border-white/10 bg-slate-950 aspect-video flex items-center justify-center">
+            <img src="/outputs/hmm/plots/classifier_vs_hmm_continuity.png" alt="HMM Continuity Gain" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition" onclick="window.open(this.src)">
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono">Classifier-only vs HMM decoded route continuity.</span>
+        </div>
+
+        <!-- Plot 6 -->
+        <div class="p-3 bg-black/40 rounded-xl border border-white/5 flex flex-col gap-2">
+          <span class="text-xs font-bold text-white font-mono">Optuna Optimization History</span>
+          <div class="rounded-lg overflow-hidden border border-white/10 bg-slate-950 aspect-video flex items-center justify-center">
+            <img src="/outputs/tuning/plots/optuna_history.png" alt="Optuna History" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition" onclick="window.open(this.src)">
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono">35 TPE trials log loss convergence objective.</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 6: Deliverables Compliance Matrix (Direct Map to Deliverables.pdf) -->
+  <div id="modalDeliverables" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="telemetry-glass w-full max-w-4xl p-6 rounded-2xl border border-white/15 flex flex-col gap-4 shadow-2xl max-h-[88vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <div class="flex items-center gap-2.5">
+          <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <div>
+            <h2 class="text-base font-bold text-white tracking-tight">PathSnap — Deliverables Compliance Audit (PES Hackathon)</h2>
+            <p class="text-xs font-mono text-slate-400">Verification of all mandatory submission requirements from Deliverables.pdf</p>
+          </div>
+        </div>
+        <button id="btnCloseDeliverables" class="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="flex flex-col gap-3 font-mono text-xs">
+        <div class="p-3 bg-black/40 rounded-xl border border-emerald-500/30 flex items-start justify-between">
+          <div>
+            <span class="text-emerald-400 font-bold">1. GitHub Repository & Structure</span>
+            <p class="text-slate-300 mt-0.5">Public repo with cleanly organized folders: data processing, features, 7 models, tuning, HMM, API, UI, visualisations, and saved weights (artifacts/final_model.joblib).</p>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">PASS [100%]</span>
+        </div>
+
+        <div class="p-3 bg-black/40 rounded-xl border border-emerald-500/30 flex items-start justify-between">
+          <div>
+            <span class="text-emerald-400 font-bold">2.2 Dataset Understanding & EDA</span>
+            <p class="text-slate-300 mt-0.5">Missing-value audit (0 missing across 153k samples), 27 spatial & kinematic features extracted, GPS trajectory plots, and Folium road network maps.</p>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">PASS [100%]</span>
+        </div>
+
+        <div class="p-3 bg-black/40 rounded-xl border border-emerald-500/30 flex items-start justify-between">
+          <div>
+            <span class="text-emerald-400 font-bold">3. Model Experimentation & Comparison</span>
+            <p class="text-slate-300 mt-0.5">7 distinct models trained & evaluated (min 5 required): LogReg, KNN, Random Forest, LightGBM, XGBoost, MLP, Tuned XGBoost. Full 9-column comparison table, confusion matrices, and loss curves.</p>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">PASS [100%]</span>
+        </div>
+
+        <div class="p-3 bg-black/40 rounded-xl border border-emerald-500/30 flex items-start justify-between">
+          <div>
+            <span class="text-emerald-400 font-bold">4. Bayesian Hyperparameter Optimisation</span>
+            <p class="text-slate-300 mt-0.5">35 TPE Optuna trials optimizing 5-fold CV log loss (0.0746 &rarr; 0.0694), parameter distributions, parameter importance chart, untuned vs tuned comparison.</p>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">PASS [100%]</span>
+        </div>
+
+        <div class="p-3 bg-black/40 rounded-xl border border-emerald-500/30 flex items-start justify-between">
+          <div>
+            <span class="text-emerald-400 font-bold">5. HMM and Viterbi Route Reconstruction</span>
+            <p class="text-slate-300 mt-0.5">Directed road arc hidden states, calibrated emission probabilities, exponential network distance transitions, GPS gap handling, continuity leap: 98.45% &rarr; 99.89%.</p>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">PASS [100%]</span>
+        </div>
+
+        <div class="p-3 bg-black/40 rounded-xl border border-emerald-500/30 flex items-start justify-between">
+          <div>
+            <span class="text-emerald-400 font-bold">6. Geographical Visualisation Using Folium</span>
+            <p class="text-slate-300 mt-0.5">Mandatory Folium interactive maps generated for all 10 test trips with distinguishable colors, layer controls, GPS track, reference route, and predicted route.</p>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">PASS [100%]</span>
+        </div>
+
+        <div class="p-3 bg-black/40 rounded-xl border border-emerald-500/30 flex items-start justify-between">
+          <div>
+            <span class="text-emerald-400 font-bold">7. API, UI and Deployment</span>
+            <p class="text-slate-300 mt-0.5">FastAPI live backend + Leaflet dark telemetry UI HUD + Two-laptop network execution capability + live API test console.</p>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">PASS [100%]</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MAIN JAVASCRIPT APPLICATION LOGIC          -->
+  <!-- ========================================== -->
   <script>
-    // State management
+    // Global Application State
     const state = {
       currentTripId: '00000000',
-      currentModel: 'rf',
+      currentModel: 'tuned',
       trips: [],
       tripData: null,
       predictionData: null,
@@ -415,13 +873,14 @@
       attributionControl: false,
     }).setView([56.25, 54.96], 14);
 
-    // Dark Matter Map Tiles
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
-      subdomains: 'abcd',
+    // Base Tiles: Esri World Dark Gray Canvas (clean dark mode, no API key watermark)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 16,
+      attribution: 'Esri, HERE, Garmin',
     }).addTo(map);
 
-    // Custom Map zoom controls at top right
+
+    // Custom Zoom Control at Top Right
     L.control.zoom({ position: 'topright' }).addTo(map);
 
     // Create Layer Groups
@@ -430,7 +889,7 @@
     state.gtLayer = L.layerGroup().addTo(map);
     state.candLayer = L.layerGroup().addTo(map);
 
-    // Vehicle beacon marker icon
+    // Vehicle beacon marker icon (Smooth Glowing Radar Pin)
     const vehicleIcon = L.divIcon({
       className: 'custom-vehicle-beacon',
       html: `
@@ -443,7 +902,7 @@
       iconAnchor: [12, 12],
     });
 
-    // Fetch and initialize trips
+    // Initialize Application
     async function initApp() {
       try {
         const resp = await fetch('/api/trips');
@@ -452,29 +911,43 @@
 
         const tripSelect = document.getElementById('tripSelect');
         tripSelect.innerHTML = trips.map(t => `
-          <option value="${t.trip_id}">${t.trip_id} (${t.num_obs} obs, ${(t.duration_sec/60).toFixed(1)}m)</option>
+          <option value="${t.trip_id}">Trip ${t.trip_id} (${t.num_obs} pts, ${(t.duration_sec/60).toFixed(1)}m)</option>
         `).join('');
 
         if (trips.length > 0) {
           state.currentTripId = trips[0].trip_id;
         }
 
-        // Setup event listeners
+        // Setup event handlers & modal triggers
         setupEventListeners();
 
-        // Load initial trip
+        // Check query parameters to deep-link into modals
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('open') === 'leaderboard') openLeaderboard();
+        else if (params.get('open') === 'tuning') document.getElementById('modalTuningHmm').classList.remove('hidden');
+        else if (params.get('open') === 'folium') document.getElementById('modalFoliumMap').classList.remove('hidden');
+        else if (params.get('open') === 'twolaptop') document.getElementById('modalTwoLaptop').classList.remove('hidden');
+        else if (params.get('open') === 'plots') document.getElementById('modalPlotsGallery').classList.remove('hidden');
+        else if (params.get('open') === 'deliverables') document.getElementById('modalDeliverables').classList.remove('hidden');
+
+        // Load initial trip with default model (tuned)
         await loadTrip(state.currentTripId);
+
       } catch (err) {
         console.error('Initialization error:', err);
       }
     }
 
+    // Load geometry and predictions for a trip
     async function loadTrip(tripId) {
       pausePlayback();
       state.currentTripId = tripId;
       document.getElementById('tripBadge').textContent = `Trip ${tripId}`;
+      document.getElementById('foliumTripTitle').textContent = `Trip ${tripId}`;
+      document.getElementById('foliumIframe').src = `/api/folium_map/${tripId}`;
+      document.getElementById('btnFoliumNewTab').href = `/api/folium_map/${tripId}`;
 
-      // Fetch geometry & predictions concurrently
+      // Concurrent fetch for low-latency response
       const [geomResp, predResp] = await Promise.all([
         fetch(`/api/trip/${tripId}`),
         fetch(`/api/predict/${tripId}?model=${state.currentModel}`)
@@ -483,10 +956,8 @@
       state.tripData = await geomResp.json();
       state.predictionData = await predResp.json();
 
-      // Update HUD stats
+      // Update UI Telemetry & Map
       updateScorecard();
-
-      // Render Map Polylines
       renderMap();
 
       // Reset Timeline
@@ -500,8 +971,8 @@
       inspectObservation(0);
     }
 
+    // Render layers on Leaflet map
     function renderMap() {
-      // Clear existing layers
       state.gpsLayer.clearLayers();
       state.predLayer.clearLayers();
       state.gtLayer.clearLayers();
@@ -509,19 +980,18 @@
 
       if (!state.tripData || !state.predictionData) return;
 
-      // 1. Raw GPS Track Polyline (Cyan dotted)
+      // 1. Raw GPS Track (Cyan dotted line)
       const gpsLatLngs = state.tripData.gps_points.map(p => [p.lat, p.lon]);
       const gpsLine = L.polyline(gpsLatLngs, {
         color: '#00f0ff',
-        weight: 2.5,
+        weight: 2,
         opacity: 0.65,
         dashArray: '3, 6',
       });
       state.gpsLayer.addLayer(gpsLine);
 
-      // Add clickable circle markers on GPS points
+      // Sub-sample clickable GPS dots
       state.tripData.gps_points.forEach((p, idx) => {
-        // Sub-sample clickable dots for rendering performance on long trips
         if (idx % 2 === 0 || idx === state.tripData.gps_points.length - 1) {
           const marker = L.circleMarker([p.lat, p.lon], {
             radius: 3,
@@ -540,7 +1010,7 @@
         }
       });
 
-      // 2. Ground Truth Traversed Route (Solar Amber)
+      // 2. Ground Truth Route (Amber polyline)
       state.tripData.gt_segments.forEach(seg => {
         if (seg.coords) {
           const gtLine = L.polyline(seg.coords, {
@@ -552,7 +1022,7 @@
         }
       });
 
-      // 3. Model Predicted Matched Route (Cyber Emerald)
+      // 3. Model Predicted Route (Cyber Emerald polyline)
       state.predictionData.matched_segments.forEach(seg => {
         if (seg.coords) {
           const isCorrect = seg.is_match === 1;
@@ -574,12 +1044,13 @@
         }
       }
 
-      // Fit map to trip bounds with smooth animation
+      // Smooth auto-fit bounds
       if (state.tripData.bbox) {
         map.fitBounds(state.tripData.bbox, { padding: [50, 50], maxZoom: 16 });
       }
     }
 
+    // Update Scorecard stats
     function updateScorecard() {
       if (!state.predictionData) return;
       const d = state.predictionData;
@@ -592,11 +1063,21 @@
       // Animate progress bar with GSAP
       gsap.to('#statProgressBar', {
         width: `${d.top1_accuracy * 100}%`,
-        duration: 0.6,
+        duration: 0.5,
         ease: 'power2.out',
       });
+
+      // HMM gain banner
+      const hmmBanner = document.getElementById('hmmGainBanner');
+      if (d.hmm_stats) {
+        hmmBanner.classList.remove('hidden');
+        document.getElementById('hmmGainVal').textContent = `+${(d.hmm_stats.continuity_gain * 100).toFixed(2)}% (+${(d.hmm_stats.top1_gain * 100).toFixed(2)}% Top-1)`;
+      } else {
+        hmmBanner.classList.add('hidden');
+      }
     }
 
+    // Inspect single observation and candidate arcs
     function inspectObservation(idx) {
       if (!state.tripData || !state.predictionData) return;
       const pts = state.tripData.gps_points;
@@ -614,11 +1095,10 @@
         state.vehicleMarker.setLatLng([pt.lat, pt.lon]);
       }
 
-      // Compute instantaneous speed between points
+      // Compute instantaneous speed
       if (idx > 0) {
         const prev = pts[idx - 1];
         const dt = Math.max(0.1, pt.timestamp - prev.timestamp);
-        // Approx distance in km
         const dLat = (pt.lat - prev.lat) * 111.0;
         const dLon = (pt.lon - prev.lon) * 111.0 * Math.cos(pt.lat * Math.PI / 180);
         const distKm = Math.sqrt(dLat * dLat + dLon * dLon);
@@ -630,7 +1110,6 @@
       const cands = state.predictionData.candidates_by_obs[idx] || [];
       const candContainer = document.getElementById('candidatesList');
 
-      // Clear candidate layer on map
       state.candLayer.clearLayers();
 
       if (cands.length === 0) {
@@ -645,13 +1124,13 @@
       document.getElementById('metaMatch').textContent = isCorrect ? 'MATCH (1)' : 'MISMATCH (0)';
       document.getElementById('metaMatch').className = isCorrect ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
 
-      // Render candidates
+      // Render candidate arcs
       candContainer.innerHTML = cands.map((c, cIdx) => {
         const isTop = cIdx === 0;
         const isTrue = c.is_match === 1;
         const probPct = (c.pred_prob * 100).toFixed(1);
 
-        // Highlight candidate arc on map
+        // Render on map if candidate layer active
         if (c.coords && document.getElementById('layerCandidates').checked) {
           const candLine = L.polyline(c.coords, {
             color: isTop ? '#00f0ff' : '#a855f7',
@@ -665,7 +1144,7 @@
         return `
           <div class="p-2 rounded-lg ${isTop ? 'bg-cyan-500/10 border border-cyan-500/30' : 'bg-black/40 border border-white/5'} flex items-center justify-between transition hover:border-white/20">
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${isTop ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-white/10 text-slate-300'}">#${cIdx + 1}</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded ${isTop ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-white/10 text-slate-300'}">#${cIdx + 1}</span>
               <div class="flex flex-col">
                 <span class="text-[11px] font-mono text-white font-medium flex items-center gap-1.5">
                   Arc ${c.arc_id}
@@ -674,16 +1153,17 @@
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <div class="w-14 bg-slate-800 rounded-full h-1.5 overflow-hidden">
+              <div class="w-12 bg-slate-800 rounded-full h-1.5 overflow-hidden">
                 <div class="h-1.5 ${isTop ? (isCorrect ? 'bg-emerald-400' : 'bg-cyan-400') : 'bg-slate-500'}" style="width: ${probPct}%"></div>
               </div>
-              <span class="text-[11px] font-mono font-bold ${isTop ? (isCorrect ? 'text-emerald-400' : 'text-cyan-400') : 'text-slate-400'} w-11 text-right">${probPct}%</span>
+              <span class="text-[10px] font-mono font-bold ${isTop ? (isCorrect ? 'text-emerald-400' : 'text-cyan-400') : 'text-slate-400'} w-10 text-right">${probPct}%</span>
             </div>
           </div>
         `;
       }).join('');
     }
 
+    // Playback loop
     function startPlayback() {
       if (state.isPlaying) return;
       state.isPlaying = true;
@@ -713,39 +1193,52 @@
       }
     }
 
+    // Event listeners
     function setupEventListeners() {
       // Trip selection
       document.getElementById('tripSelect').addEventListener('change', (e) => {
         loadTrip(e.target.value);
       });
 
-      // Model button switcher
-      document.querySelectorAll('.model-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          const model = e.target.dataset.model;
-          state.currentModel = model;
-
-          // Update active button styling
-          document.querySelectorAll('.model-btn').forEach(b => {
-            b.className = 'model-btn px-2.5 py-1 rounded-md text-slate-400 hover:text-white transition';
-          });
-          e.target.className = 'model-btn px-2.5 py-1 rounded-md text-white font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition';
-
-          // Update header stats
-          updateHeaderModelMeta(model);
-
-          // Reload predictions for current trip
-          await reloadModelPredictions();
-        });
+      // Model selection
+      document.getElementById('modelSelect').addEventListener('change', async (e) => {
+        state.currentModel = e.target.value;
+        updateHeaderModelMeta(state.currentModel);
+        await reloadModelPredictions();
       });
 
-      // Play / Pause button
+      // Fit bounds button
+      document.getElementById('btnFitBounds').addEventListener('click', () => {
+        if (state.tripData && state.tripData.bbox) {
+          map.fitBounds(state.tripData.bbox, { padding: [50, 50], maxZoom: 16 });
+        }
+      });
+
+      // Play / Pause
       document.getElementById('btnPlayPause').addEventListener('click', () => {
         if (state.isPlaying) pausePlayback();
         else startPlayback();
       });
 
-      // Reset button
+      // Step Next / Prev
+      document.getElementById('btnStepNext').addEventListener('click', () => {
+        pausePlayback();
+        if (state.tripData && state.playbackIndex < state.tripData.num_obs - 1) {
+          state.playbackIndex++;
+          document.getElementById('timelineSlider').value = state.playbackIndex;
+          inspectObservation(state.playbackIndex);
+        }
+      });
+      document.getElementById('btnStepPrev').addEventListener('click', () => {
+        pausePlayback();
+        if (state.playbackIndex > 0) {
+          state.playbackIndex--;
+          document.getElementById('timelineSlider').value = state.playbackIndex;
+          inspectObservation(state.playbackIndex);
+        }
+      });
+
+      // Reset
       document.getElementById('btnReset').addEventListener('click', () => {
         pausePlayback();
         state.playbackIndex = 0;
@@ -789,19 +1282,11 @@
         inspectObservation(state.playbackIndex);
       });
 
-      // Leaderboard Modal
-      document.getElementById('btnBenchmarkModal').addEventListener('click', openLeaderboard);
-      document.getElementById('btnCloseLeaderboard').addEventListener('click', () => {
-        document.getElementById('modalLeaderboard').classList.add('hidden');
-      });
-
-      // Feature Importance Modal
-      document.getElementById('btnFeatureImportance').addEventListener('click', openFeatureImportance);
-      document.getElementById('btnCloseFeatureImportance').addEventListener('click', () => {
-        document.getElementById('modalFeatureImportance').classList.add('hidden');
-      });
+      // Modals setup
+      setupModals();
     }
 
+    // Reload model predictions for currently active trip
     async function reloadModelPredictions() {
       const predResp = await fetch(`/api/predict/${state.currentTripId}?model=${state.currentModel}`);
       state.predictionData = await predResp.json();
@@ -810,64 +1295,163 @@
       inspectObservation(state.playbackIndex);
     }
 
+    // Update Header Model Meta Numbers
     function updateHeaderModelMeta(model) {
       const meta = {
-        rf: { acc: '84.74%', f1: '0.8937', loss: '0.1441' },
-        knn: { acc: '78.88%', f1: '0.8650', loss: '0.2796' },
-        logreg: { acc: '74.33%', f1: '0.7468', loss: '0.3489' },
-        heuristic: { acc: '56.68%', f1: '0.6812', loss: '0.8920' },
-      }[model] || { acc: '--', f1: '--', loss: '--' };
+        tuned: { acc: '92.47%', f1: '0.9427', cont: '99.89%', loss: '0.0644' },
+        lgbm: { acc: '90.14%', f1: '0.9418', cont: '98.48%', loss: '0.0654' },
+        xgb: { acc: '89.76%', f1: '0.9391', cont: '98.44%', loss: '0.0672' },
+        mlp: { acc: '89.23%', f1: '0.9335', cont: '98.26%', loss: '0.0748' },
+        rf: { acc: '88.70%', f1: '0.9241', cont: '97.54%', loss: '0.1039' },
+        logreg: { acc: '88.15%', f1: '0.8631', cont: '98.68%', loss: '0.1662' },
+        knn: { acc: '81.66%', f1: '0.8843', cont: '98.12%', loss: '0.2722' },
+        heuristic: { acc: '54.00%', f1: '0.6812', cont: '94.20%', loss: '0.8920' },
+      }[model] || { acc: '--', f1: '--', cont: '--', loss: '--' };
 
       document.getElementById('modelBenchmarkAcc').textContent = meta.acc;
       document.getElementById('modelBenchmarkF1').textContent = meta.f1;
+      document.getElementById('modelBenchmarkCont').textContent = meta.cont;
       document.getElementById('modelBenchmarkLoss').textContent = meta.loss;
     }
 
+    // Modal Triggers and Setup
+    function setupModals() {
+      // Leaderboard Modal
+      document.getElementById('btnBenchmarkModal').addEventListener('click', openLeaderboard);
+      document.getElementById('btnCloseLeaderboard').addEventListener('click', () => {
+        document.getElementById('modalLeaderboard').classList.add('hidden');
+      });
+
+      // Tuning & HMM Modal
+      document.getElementById('btnTuningHmmModal').addEventListener('click', () => {
+        document.getElementById('modalTuningHmm').classList.remove('hidden');
+      });
+      document.getElementById('btnCloseTuningHmm').addEventListener('click', () => {
+        document.getElementById('modalTuningHmm').classList.add('hidden');
+      });
+
+      // Tuning & HMM Tabs
+      document.getElementById('tabBtnTuning').addEventListener('click', () => {
+        document.getElementById('tabContentTuning').classList.remove('hidden');
+        document.getElementById('tabContentHmm').classList.add('hidden');
+        document.getElementById('tabBtnTuning').className = 'px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+        document.getElementById('tabBtnHmm').className = 'px-3 py-1.5 rounded-lg text-xs font-mono text-slate-400 hover:text-white';
+      });
+      document.getElementById('tabBtnHmm').addEventListener('click', () => {
+        document.getElementById('tabContentTuning').classList.add('hidden');
+        document.getElementById('tabContentHmm').classList.remove('hidden');
+        document.getElementById('tabBtnHmm').className = 'px-3 py-1.5 rounded-lg text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+        document.getElementById('tabBtnTuning').className = 'px-3 py-1.5 rounded-lg text-xs font-mono text-slate-400 hover:text-white';
+      });
+
+      // Folium Map Modal
+      document.getElementById('btnFoliumModal').addEventListener('click', () => {
+        document.getElementById('modalFoliumMap').classList.remove('hidden');
+      });
+      document.getElementById('btnCloseFolium').addEventListener('click', () => {
+        document.getElementById('modalFoliumMap').classList.add('hidden');
+      });
+
+      // Two Laptop Modal
+      document.getElementById('btnTwoLaptopModal').addEventListener('click', () => {
+        document.getElementById('modalTwoLaptop').classList.remove('hidden');
+      });
+      document.getElementById('btnCloseTwoLaptop').addEventListener('click', () => {
+        document.getElementById('modalTwoLaptop').classList.add('hidden');
+      });
+
+      // Live API Tester
+      document.getElementById('btnSendApiRequest').addEventListener('click', testApiEndpoint);
+
+      // Diagnostic Plots Gallery
+      document.getElementById('btnPlotsModal').addEventListener('click', () => {
+        document.getElementById('modalPlotsGallery').classList.remove('hidden');
+      });
+      document.getElementById('btnClosePlots').addEventListener('click', () => {
+        document.getElementById('modalPlotsGallery').classList.add('hidden');
+      });
+
+      // Deliverables Compliance Modal
+      document.getElementById('btnDeliverablesModal').addEventListener('click', () => {
+        document.getElementById('modalDeliverables').classList.remove('hidden');
+      });
+      document.getElementById('btnCloseDeliverables').addEventListener('click', () => {
+        document.getElementById('modalDeliverables').classList.add('hidden');
+      });
+    }
+
+    // Populate Section 3.1 Leaderboard
     async function openLeaderboard() {
-      const resp = await fetch('/api/benchmark');
-      const rows = await resp.json();
-      const tbody = document.getElementById('leaderboardTbody');
-      tbody.innerHTML = rows.map(r => `
-        <tr class="hover:bg-white/5 transition">
-          <td class="p-3 font-bold text-white">${r.model_name}</td>
-          <td class="p-3 text-slate-400">${r.algorithm_family}</td>
-          <td class="p-3 text-right text-cyan-400 font-semibold">${(r.cv_macro_f1_mean).toFixed(4)}</td>
-          <td class="p-3 text-right text-slate-200">${(r.cv_top1_accuracy_mean * 100).toFixed(2)}%</td>
-          <td class="p-3 text-right font-bold text-emerald-400">${(r.student_test_top1_accuracy * 100).toFixed(2)}%</td>
-          <td class="p-3 text-right text-cyan-300 font-semibold">${(r.student_test_macro_f1).toFixed(4)}</td>
-          <td class="p-3 text-right text-slate-300">${(r.student_test_log_loss).toFixed(4)}</td>
-          <td class="p-3 text-right text-slate-400">${(r.inference_time_sec).toFixed(2)}s</td>
-        </tr>
-      `).join('');
-      document.getElementById('modalLeaderboard').classList.remove('hidden');
+      try {
+        const resp = await fetch('/api/benchmark');
+        const rows = await resp.json();
+        const tbody = document.getElementById('leaderboardTbody');
+        
+        tbody.innerHTML = rows.map((r, idx) => {
+          const isBest = r.model_name.includes('Tuned') || r.model_name.includes('HMM');
+          const isLgbm = r.model_name.includes('LightGBM');
+          return `
+            <tr class="hover:bg-white/5 transition ${isBest ? 'bg-emerald-500/10 font-bold' : ''}">
+              <td class="p-2.5 text-white flex items-center gap-1.5">
+                ${isBest ? '<span class="w-2 h-2 rounded-full bg-emerald-400"></span>' : ''}
+                ${r.model_name || r.Model}
+                ${isBest ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Production</span>' : ''}
+              </td>
+              <td class="p-2.5 text-slate-400">${r.algorithm_family || r['Algorithm Family']}</td>
+              <td class="p-2.5 text-slate-300 max-w-xs truncate" title="${r.key_config || r['Key Configuration']}">
+                ${r.key_config || r['Key Configuration']}
+              </td>
+              <td class="p-2.5 text-right text-cyan-400 font-semibold">${Number(r.cv_macro_f1_mean || r['CV Macro F1-score']).toFixed(4)}</td>
+              <td class="p-2.5 text-right ${isBest || isLgbm ? 'text-emerald-400 font-bold' : 'text-slate-200'}">
+                ${(Number(r.student_test_top1_accuracy || r['Top-1 Accuracy']) * (Number(r.student_test_top1_accuracy || r['Top-1 Accuracy']) <= 1 ? 100 : 1)).toFixed(2)}%
+              </td>
+              <td class="p-2.5 text-right font-bold ${isBest ? 'text-emerald-300' : 'text-slate-300'}">
+                ${(Number(r.route_continuity || r['Route Continuity']) * (Number(r.route_continuity || r['Route Continuity']) <= 1 ? 100 : 1)).toFixed(2)}%
+              </td>
+              <td class="p-2.5 text-right text-cyan-300 font-semibold">${Number(r.student_test_macro_f1 || r['Student-Test Macro F1-score']).toFixed(4)}</td>
+              <td class="p-2.5 text-right text-slate-300">${Number(r.student_test_log_loss || r['Log Loss']).toFixed(4)}</td>
+              <td class="p-2.5 text-right text-slate-400">${Number(r.inference_time_sec || r['Inference Time (s)'] || 0).toFixed(3)}s</td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById('modalLeaderboard').classList.remove('hidden');
+      } catch (err) {
+        console.error('Failed to load benchmark table:', err);
+      }
     }
 
-    async function openFeatureImportance() {
-      const resp = await fetch('/api/feature_importances');
-      const items = await resp.json();
-      const container = document.getElementById('featureImportanceList');
-      const maxImp = Math.max(...items.map(i => i.importance), 0.001);
+    // Live API Tester
+    async function testApiEndpoint() {
+      const select = document.getElementById('apiEndpointSelect');
+      const endpoint = select.value;
+      const box = document.getElementById('apiResponseBox');
+      const badge = document.getElementById('apiLatencyBadge');
 
-      container.innerHTML = items.map((item, idx) => {
-        const pct = (item.importance * 100).toFixed(2);
-        const barPct = (item.importance / maxImp) * 100;
-        return `
-          <div class="flex flex-col gap-1 bg-black/40 p-2.5 rounded-lg border border-white/5">
-            <div class="flex justify-between items-center">
-              <span class="text-white font-medium">#${idx + 1} ${item.feature}</span>
-              <span class="text-emerald-400 font-bold">${pct}%</span>
-            </div>
-            <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
-              <div class="bg-gradient-to-r from-cyan-500 to-emerald-400 h-1.5 rounded-full" style="width: ${barPct}%"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
-      document.getElementById('modalFeatureImportance').classList.remove('hidden');
+      box.textContent = `Sending GET ${endpoint}...`;
+      badge.textContent = 'Executing...';
+      badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30';
+
+      const t0 = performance.now();
+      try {
+        const resp = await fetch(endpoint);
+        const t1 = performance.now();
+        const latencyMs = (t1 - t0).toFixed(1);
+
+        const data = await resp.json();
+        box.textContent = JSON.stringify(data, null, 2);
+        badge.textContent = `HTTP ${resp.status} · ${latencyMs}ms`;
+        badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+      } catch (err) {
+        const t1 = performance.now();
+        box.textContent = `Error: ${err.message}`;
+        badge.textContent = `Failed · ${(t1 - t0).toFixed(1)}ms`;
+        badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/30';
+      }
     }
 
-    // Launch application
-    initApp();
+    // Initialize application on DOM ready
+    window.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
 </html>

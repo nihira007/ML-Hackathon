@@ -1,0 +1,6 @@
+Model,CV Macro F1,Candidate Accuracy,Student-Test Macro F1,Pointwise Top-1 Acc,HMM Mean Trip Top-1 Acc,HMM Route Continuity,Log Loss
+1. Soft-Voting Ensemble (LGBM+XGB+HGB+MLP) + HMM,0.9396,0.9763,0.9437,0.9046,0.9271,0.9988,0.0631
+2. LightGBM + HMM/Viterbi,0.939,0.9754,0.9418,0.9014,0.9236,0.9988,0.0654
+3. XGBoost (Optuna Tuned) + HMM/Viterbi,0.9399,0.9759,0.9427,0.9019,0.9247,0.9989,0.0644
+4. HistGradientBoosting + HMM/Viterbi,0.9396,0.9766,0.9444,0.9086,0.9287,0.9986,0.0627
+5. XGBoost (Baseline) + HMM/Viterbi,0.9391,0.9743,0.9391,0.8976,0.9213,0.9989,0.0672

@@ -25,5 +25,11 @@
   "to_out_degree",
   "to_in_degree",
   "has_reverse_arc",
-  "local_road_density"
+  "local_road_density",
+  "bearing_diff_w5_deg",
+  "cos_bearing_diff_w5",
+  "connected_prev2_nearest",
+  "connected_next2_nearest",
+  "cand_freq_window5",
+  "perp_dist_ratio_to_2nd"
 ]
