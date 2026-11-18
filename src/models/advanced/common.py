@@ -181,11 +181,23 @@ def trip_splits(train):
     return splits
 
 
-def grouped_cv(train, features, name, *, params=None, epochs=20, estimator=None):
+def sample_fit_rows(train, rows, max_train_rows):
+    """Apply a fit budget by sampling whole observations, retaining all their candidates."""
+    if max_train_rows is None or len(rows) <= max_train_rows:
+        return rows
+    observations = train.iloc[rows].groupby(["trip_id", "obs_idx"], sort=False).ngroup().to_numpy()
+    total = int(observations.max()) + 1
+    target = max(1, int(max_train_rows * total / len(rows)))
+    selected = np.random.default_rng(SEED).choice(total, size=target, replace=False)
+    return rows[np.isin(observations, selected)]
+
+
+def grouped_cv(train, features, name, *, params=None, epochs=20, estimator=None, max_train_rows=None):
     X, y = train[features], train.is_match
     scores, histories = [], []
     start = perf_counter()
     for fold, (train_idx, val_idx) in enumerate(trip_splits(train), 1):
+        train_idx = sample_fit_rows(train, train_idx, max_train_rows)
         X_fit, X_val = X.iloc[train_idx], X.iloc[val_idx]
         y_fit, y_val = y.iloc[train_idx], y.iloc[val_idx]
         model, history = fit_model(name, X_fit, y_fit, params=params, epochs=epochs,
@@ -194,8 +206,9 @@ def grouped_cv(train, features, name, *, params=None, epochs=20, estimator=None)
         train_f1 = f1_score(y_fit, model.predict_proba(X_fit)[:, 1] >= 0.5,
                             labels=[0, 1], average="macro", zero_division=0)
         scores.append({"fold": fold, "validation_trips": sorted(train.trip_id.iloc[val_idx].unique()),
-                       "train_macro_f1": float(train_f1), **val})
+                       "fit_candidate_rows": len(train_idx), "train_macro_f1": float(train_f1), **val})
         histories.extend({"fold": fold, **item} for item in history)
+        print(f"{name}: fold {fold}/5, validation macro F1 {val['macro_f1']:.4f}", flush=True)
     rows = pd.DataFrame(scores)
     return {
         "cv_macro_f1_mean": float(rows.macro_f1.mean()),
@@ -208,9 +221,11 @@ def grouped_cv(train, features, name, *, params=None, epochs=20, estimator=None)
     }, pd.DataFrame(histories)
 
 
-def evaluate_model(train, test, features, name, cv, *, params=None, epochs=20, estimator=None):
+def evaluate_model(train, test, features, name, cv, *, params=None, epochs=20, estimator=None,
+                   max_train_rows=None):
+    rows = sample_fit_rows(train, np.arange(len(train)), max_train_rows)
     start = perf_counter()
-    model, _ = fit_model(name, train[features], train.is_match,
+    model, _ = fit_model(name, train.iloc[rows][features], train.is_match.iloc[rows],
                          params=params, epochs=epochs, estimator=estimator)
     train_seconds = perf_counter() - start
     X_test = test[features]
@@ -221,7 +236,8 @@ def evaluate_model(train, test, features, name, cv, *, params=None, epochs=20, e
         probabilities = model.predict_proba(X_test)[:, 1]
         times.append(perf_counter() - start)
     return model, probabilities, {
-        **cv, "train_time_sec": train_seconds, "inference_time_sec": float(np.median(times)),
+        **cv, "fit_candidate_rows": len(rows), "train_time_sec": train_seconds,
+        "inference_time_sec": float(np.median(times)),
         "student_test": metrics(test, probabilities),
     }
 

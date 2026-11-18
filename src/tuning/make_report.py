@@ -83,10 +83,28 @@ def make_report(models, tuning):
     title = "Synthetic verification" if summary["smoke"] else "PathSnap experiments"
     plots = tuning / "plots"
     plots.mkdir(parents=True, exist_ok=True)
+    selection = pd.read_csv(tuning / "model_selection.csv")
     lines = [f"# Person 3 · {title}", ""]
     if summary["smoke"]:
         lines += ["These results measure generated candidates and verify the software workflow.", ""]
-    lines += ["## 3.2 Advanced classifiers", ""]
+    else:
+        lines += [
+            f"The benchmark uses {summary['train_trips']} real training trips and "
+            f"{summary['student_test_trips']} real development trips. Five-fold validation keeps "
+            "whole trips together. Development metrics inform model selection, and Optuna scores its "
+            "trials using the training partition only.", "",
+        ]
+    lines += [
+        "## 3.1 Baseline comparison", "",
+        "| Model | CV Macro F1 | Student-test Top-1 | Student-test log loss | Inference (s) | Rank score |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for row in selection.itertuples():
+        lines.append(
+            f"| {row.model_name} | {row.cv_macro_f1_mean:.4f} | {row.student_test_top1_accuracy:.2%} | "
+            f"{row.student_test_log_loss:.4f} | {row.inference_time_sec:.4f} | {row.weighted_rank:.2f} |"
+        )
+    lines += ["", "## 3.2 Advanced classifiers", ""]
     for record in baselines:
         slug, name = record["model"], record["model_name"]
         fit, objective = RATIONALE[slug]
@@ -109,13 +127,21 @@ def make_report(models, tuning):
             f"Mean training-fold Macro F1 {train_f1:.4f} and validation Macro F1 "
             f"{cv_f1:.4f} ± {record['cv_macro_f1_std']:.4f} give a gap of {gap:+.4f}. {assessment}", "",
         ]
+        if slug == "mlp":
+            history = pd.read_csv(models / "mlp_history.csv").groupby("epoch").mean(numeric_only=True)
+            best_epoch = history.validation_loss.idxmin()
+            lines += [
+                f"The mean validation loss was lowest at epoch {best_epoch} "
+                f"({history.loc[best_epoch, 'validation_loss']:.4f}). At epoch {history.index[-1]}, "
+                f"mean training and validation loss were {history.train_loss.iloc[-1]:.4f} and "
+                f"{history.validation_loss.iloc[-1]:.4f}.", "",
+            ]
         confusion(record, f"{name} confusion matrix · {title}", plots / f"{slug}_confusion_matrix.png")
         importance(models / f"{slug}_feature_importance.csv", f"{name} · {title}",
                    plots / f"{slug}_feature_importance.png", "Log-loss increase after shuffling")
 
     loss_curve(models, title, plots / "mlp_loss_curve.png")
 
-    selection = pd.read_csv(tuning / "model_selection.csv")
     comparisons(selection, selection.model_name, list(METRICS)[:4], title, plots / "baseline_comparison.png")
     trials = pd.read_csv(tuning / "optuna_trials.csv")
     complete = trials[trials.state.eq("COMPLETE")]
