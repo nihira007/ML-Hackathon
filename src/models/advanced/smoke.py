@@ -10,6 +10,7 @@ from src.models.advanced.common import (
     package_versions, run_baseline, write_json,
 )
 from src.tuning.bayesian_opt import run_tuning
+from src.tuning.make_report import make_report
 
 V1 = ["distance_m", "arc_length_m", "cand_rank"]
 V2 = [*V1, "heading_error_deg", "speed_mps"]
@@ -61,6 +62,7 @@ def main():
     tuning = root / "tuning"
     result = run_tuning(train, test, V2, records, tuning, root / "artifacts", trials=args.trials,
                         epochs=epochs, signature=signature, smoke=True)
+    make_report(root / "v2", tuning)
     handoff = pd.read_parquet(tuning / "tuned_student_test_preds.parquet")
     assert list(handoff.columns) == PRED_COLS
     assert len(handoff) == len(test) and handoff.pred_prob.between(0, 1).all()
