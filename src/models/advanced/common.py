@@ -283,7 +283,7 @@ def data_arguments(parser):
 def cli(name=None):
     parser = argparse.ArgumentParser(description="Run the advanced candidate classifier benchmarks")
     data_arguments(parser)
-    parser.add_argument("--feature-version", choices=["v1"], default="v1")
+    parser.add_argument("--feature-version", choices=["v1", "v2"], default="v2")
     parser.add_argument("--output", type=Path, default=Path("outputs/models/advanced"))
     args = parser.parse_args()
     if args.epochs < 1 or (name == "mlp" and args.feature_version == "v1"):
@@ -292,7 +292,7 @@ def cli(name=None):
     features = feature_names(args.features)
     train, test = load_data(args.train, args.test, features)
     signature = data_signature(args.train, args.test, args.features)
-    models = [name] if name else ["lgbm", "xgb"]
+    models = [name] if name else (["lgbm", "xgb"] if args.feature_version == "v1" else list(NAMES))
     rows = [
         run_baseline(model, train, test, features, output, feature_version=args.feature_version,
                      signature=signature, epochs=args.epochs) for model in models
