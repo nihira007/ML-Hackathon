@@ -1,0 +1,26 @@
+{
+  "selected_model": "XGBoost",
+  "real_training_trips": 80,
+  "real_student_test_trips": 10,
+  "matching_cv_folds_across_all_six_models": true,
+  "held_out_evaluator_partition_used": false,
+  "evaluation_gps_observations": 19160,
+  "exact_reloaded_probabilities": 157866,
+  "route_free_inference_trip": "00000052",
+  "route_free_inference_candidate_rows": 2487,
+  "mlp_fold_epoch_rows": 100,
+  "completed_optuna_trials": 35,
+  "verified_pngs": 24,
+  "person1_source_commit": "10c442dbfc01576001beec371d42604965d18c64",
+  "v1_data_signature": [
+    "3ed5c12dc2b54456864a2257f162bff6fbb3314df2f2bcb9a013017f561fb77b",
+    "7a96ff20187b457d67476bf8d57c19f16eb6eeb74ef5858eb0b4d5e9af3027ff",
+    "d15c88e07a00c530b93fc23169cae8d51c9c1047fc0f67ff194f7a469bc8b5ec"
+  ],
+  "v2_data_signature": [
+    "8996b39453c4bbfe4f694a1f365ee8fbdb9b2c15235854d49b8a7c1b229b3373",
+    "768826f9733d7bd72aec402850a4316ddee566258de2deb22ac0e87660560980",
+    "3480fbad4a891704762ca9893271cd331293be1aecfd8e56b5ae38efbb1a0f61"
+  ],
+  "person4_decoder_handoff_trips": 10
+}

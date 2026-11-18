@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PathSnap — Distributed Map-Matching & Route Reconstruction Evaluator UI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .trip-btn.active {
+      background-color: #1d4ed8;
+      color: #ffffff;
+      border-color: #1e40af;
+      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+  <!-- Top Header & Laptop 1 API Connection Bar -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-lg shadow">
+          PS
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">
+            PathSnap — Distributed Map-Matching &amp; Route Reconstruction
+          </h1>
+          <p class="text-xs text-slate-400">
+            UE24CS352A ML Hackathon • Laptop 2 Evaluator Interface → Laptop 1 FastAPI Model &amp; HMM/Viterbi Server
+          </p>
+        </div>
+      </div>
+
+      <!-- Configurable Laptop 1 API URL -->
+      <div class="flex flex-wrap items-center gap-2">
+        <label for="apiUrlInput" class="text-xs font-medium text-slate-400">Laptop 1 API:</label>
+        <input
+          id="apiUrlInput"
+          type="text"
+          value="http://127.0.0.1:8000"
+          placeholder="http://<LAPTOP_1_IP>:8000"
+          class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 w-52 focus:outline-none focus:border-blue-500"
+        />
+        <select
+          id="partitionSelect"
+          class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-blue-500"
+        >
+          <option value="evaluator_test">evaluator_test (10 Reserved Trips)</option>
+          <option value="student_test" selected>student_test (10 Dev Trips)</option>
+          <option value="train">train (80 Training Trips)</option>
+        </select>
+        <button
+          id="connectBtn"
+          class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg transition"
+        >
+          Connect &amp; Load Trips
+        </button>
+        <span id="apiStatusBadge" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+          Connecting...
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Grid -->
+  <main class="max-w-7xl w-full mx-auto px-4 py-5 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <!-- Left Sidebar: 10 Evaluation Trips Selector & System Info -->
+    <aside class="lg:col-span-3 space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-semibold text-white">Evaluation Trips</h2>
+          <span id="tripCountLabel" class="text-xs text-blue-400 font-medium">0 trips</span>
+        </div>
+        <p class="text-xs text-slate-400 mb-3">
+          Select any trip below to send an inference request to Laptop 1 (<code>POST /api/predict</code>).
+        </p>
+        <div id="tripButtonsContainer" class="grid grid-cols-2 lg:grid-cols-1 gap-2 max-h-96 overflow-y-auto pr-1">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Model & Decoder Artifact Card -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2.5 text-xs">
+        <h3 class="text-sm font-semibold text-white">Loaded Pipeline Artifacts</h3>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Classifier:</span>
+          <span id="metaModelName" class="font-medium text-emerald-400">XGBoost (Optuna Tuned)</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Engineered Features:</span>
+          <span id="metaFeatureCount" class="font-medium text-slate-200">27 features (v2)</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">HMM β / Emission Wt:</span>
+          <span id="metaHmmParams" class="font-medium text-slate-200">β=25.0, w=2.0</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Disconnect Penalty:</span>
+          <span id="metaHmmPenalty" class="font-medium text-slate-200">30.0 (cutoff 1000m)</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Area: Metrics, Map & API Response Log -->
+    <section class="lg:col-span-9 space-y-5">
+      <!-- Top KPI Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
+          <div class="text-[11px] text-slate-400">Selected Trip</div>
+          <div id="kpiTripId" class="text-lg font-bold text-white mt-0.5">—</div>
+          <div id="kpiObsCount" class="text-[11px] text-slate-400 mt-0.5">0 GPS obs</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
+          <div class="text-[11px] text-slate-400">HMM Route Continuity</div>
+          <div id="kpiContinuity" class="text-lg font-bold text-emerald-400 mt-0.5">—</div>
+          <div id="kpiContinuityDelta" class="text-[11px] text-slate-400 mt-0.5">vs. Classifier-Only</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
+          <div class="text-[11px] text-slate-400">Sequence F1 Score</div>
+          <div id="kpiSeqF1" class="text-lg font-bold text-blue-400 mt-0.5">—</div>
+          <div id="kpiSeqF1Delta" class="text-[11px] text-slate-400 mt-0.5">Server-side GT eval</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
+          <div class="text-[11px] text-slate-400">Obs Top-1 Accuracy</div>
+          <div id="kpiTop1Acc" class="text-lg font-bold text-indigo-400 mt-0.5">—</div>
+          <div id="kpiTop1Delta" class="text-[11px] text-slate-400 mt-0.5">Pointwise match</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
+          <div class="text-[11px] text-slate-400">LCS / Jaccard</div>
+          <div id="kpiLcsJaccard" class="text-lg font-bold text-amber-400 mt-0.5">—</div>
+          <div id="kpiArcCounts" class="text-[11px] text-slate-400 mt-0.5">Pred vs. GT arcs</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
+          <div class="text-[11px] text-slate-400">Inference Latency</div>
+          <div id="kpiLatency" class="text-lg font-bold text-purple-400 mt-0.5">—</div>
+          <div id="kpiDisconnects" class="text-[11px] text-slate-400 mt-0.5">0 disconnects</div>
+        </div>
+      </div>
+
+      <!-- Interactive Folium Map Viewer -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-semibold text-white">
+              Interactive Route Reconstruction Map (Folium / Leaflet)
+            </h2>
+            <p class="text-xs text-slate-400">
+              Toggle layers inside the map: Local Road Network, Raw GPS (.track), Reference Route (.route), Classifier-Only, and HMM/Viterbi Predicted Route.
+            </p>
+          </div>
+          <span id="loadingSpinner" class="hidden text-xs font-medium text-amber-400 animate-pulse">
+            Running feature extraction + XGBoost + Viterbi on Laptop 1...
+          </span>
+        </div>
+        <div class="relative w-full h-[500px] bg-slate-950">
+          <iframe
+            id="foliumIframe"
+            title="Folium Route Reconstruction Map"
+            class="w-full h-full border-0"
+          ></iframe>
+          <div
+            id="mapEmptyOverlay"
+            class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 text-slate-400"
+          >
+            <p class="text-sm font-medium text-slate-300">Select an evaluation trip on the left to reconstruct its trajectory</p>
+            <p class="text-xs text-slate-500 mt-1">Laptop 2 will send the trip ID to Laptop 1 and render the returned Folium map and metrics here.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Classifier-Only vs. Classifier + HMM/Viterbi Comparison Table & API Log -->
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+          <h3 class="text-sm font-semibold text-white mb-3">
+            Classifier-Only vs. Classifier + HMM/Viterbi Decoding
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400">
+                  <th class="py-2">Metric</th>
+                  <th class="py-2">Classifier-Only</th>
+                  <th class="py-2">Classifier + HMM</th>
+                  <th class="py-2">Gain (Δ)</th>
+                </tr>
+              </thead>
+              <tbody id="comparisonTableBody" class="divide-y divide-slate-800/70">
+                <tr><td colspan="4" class="py-4 text-center text-slate-500">Run a trip to view comparison</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-semibold text-white">Live API Request / Response Inspector</h3>
+            <span id="httpStatusChip" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
+          </div>
+          <pre
+            id="apiLogBox"
+            class="text-[11px] text-slate-300 bg-slate-950 border border-slate-800 rounded-xl p-3 overflow-auto h-48 font-mono"
+          >Ready. Click any trip on the left to invoke POST /api/predict on Laptop 1.</pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const apiUrlInput = document.getElementById('apiUrlInput');
+    const partitionSelect = document.getElementById('partitionSelect');
+    const connectBtn = document.getElementById('connectBtn');
+    const apiStatusBadge = document.getElementById('apiStatusBadge');
+    const tripButtonsContainer = document.getElementById('tripButtonsContainer');
+    const tripCountLabel = document.getElementById('tripCountLabel');
+    const foliumIframe = document.getElementById('foliumIframe');
+    const mapEmptyOverlay = document.getElementById('mapEmptyOverlay');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const apiLogBox = document.getElementById('apiLogBox');
+    const httpStatusChip = document.getElementById('httpStatusChip');
+
+    // Auto-default API host to same hostname on port 8000 if opened over LAN
+    if (window.location.hostname && window.location.hostname !== 'localhost') {
+      apiUrlInput.value = `http://${window.location.hostname}:8000`;
+    }
+
+    function getBaseUrl() {
+      return apiUrlInput.value.trim().replace(/\/+$/, '');
+    }
+
+    function fmtPct(v) {
+      return (v === null || v === undefined || Number.isNaN(v)) ? 'N/A' : (v * 100).toFixed(2) + '%';
+    }
+
+    function fmtDelta(v) {
+      if (v === null || v === undefined || Number.isNaN(v)) return 'N/A';
+      const sign = v >= 0 ? '+' : '';
+      return sign + (v * 100).toFixed(2) + '%';
+    }
+
+    async function loadHealthAndTrips() {
+      const baseUrl = getBaseUrl();
+      const partition = partitionSelect.value;
+      apiStatusBadge.textContent = 'Connecting...';
+      apiStatusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-amber-950 text-amber-300 border border-amber-700';
+
+      try {
+        const [healthRes, tripsRes] = await Promise.all([
+          fetch(`${baseUrl}/api/health`),
+          fetch(`${baseUrl}/api/trips?partition=${encodeURIComponent(partition)}`)
+        ]);
+        if (!healthRes.ok || !tripsRes.ok) {
+          throw new Error(`HTTP ${healthRes.status} / ${tripsRes.status}`);
+        }
+        const health = await healthRes.json();
+        const tripsData = await tripsRes.json();
+
+        apiStatusBadge.textContent = `Connected (${tripsData.partition})`;
+        apiStatusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700';
+
+        document.getElementById('metaModelName').textContent = health.selected_model || 'XGBoost';
+        document.getElementById('metaFeatureCount').textContent = `${health.feature_count || 27} features (v2)`;
+        if (health.hmm_config) {
+          document.getElementById('metaHmmParams').textContent =
+            `β=${health.hmm_config.beta}, w=${health.hmm_config.emission_weight}`;
+          document.getElementById('metaHmmPenalty').textContent =
+            `${health.hmm_config.disconnect_penalty} (cutoff ${health.hmm_config.max_route_dist_m}m)`;
+        }
+
+        renderTripButtons(tripsData.trips || [], tripsData.partition);
+      } catch (err) {
+        apiStatusBadge.textContent = 'API Offline';
+        apiStatusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-950 text-rose-300 border border-rose-700';
+        apiLogBox.textContent = `Could not connect to Laptop 1 API at ${baseUrl}.\nMake sure 'uvicorn src.api.server:app --host 0.0.0.0 --port 8000' is running on Laptop 1.\nError: ${err.message}`;
+      }
+    }
+
+    function renderTripButtons(trips, partitionName) {
+      tripButtonsContainer.innerHTML = '';
+      tripCountLabel.textContent = `${trips.length} trips (${partitionName})`;
+
+      trips.forEach((t, idx) => {
+        const btn = document.createElement('button');
+        btn.className =
+          'trip-btn text-left px-3 py-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-800/80 transition flex items-center justify-between';
+        btn.dataset.tripId = t.trip_id;
+        btn.innerHTML = `
+          <div>
+            <div class="text-xs font-semibold">Trip ${t.trip_id}</div>
+            <div class="text-[10px] opacity-75">Option #${idx + 1} • ${t.partition}</div>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300">Run →</span>
+        `;
+        btn.addEventListener('click', () => runTripPrediction(t.trip_id, t.partition, btn));
+        tripButtonsContainer.appendChild(btn);
+      });
+    }
+
+    async function runTripPrediction(tripId, partitionName, btnElement) {
+      document.querySelectorAll('.trip-btn').forEach(b => b.classList.remove('active'));
+      if (btnElement) btnElement.classList.add('active');
+
+      const baseUrl = getBaseUrl();
+      loadingSpinner.classList.remove('hidden');
+      httpStatusChip.textContent = 'POST /api/predict...';
+      httpStatusChip.className = 'text-[11px] px-2 py-0.5 rounded bg-amber-950 text-amber-300';
+
+      try {
+        const res = await fetch(`${baseUrl}/api/predict`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ trip_id: tripId, partition: partitionName })
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`HTTP ${res.status}: ${errText}`);
+        }
+        const data = await res.json();
+        updateDashboard(data);
+        httpStatusChip.textContent = '200 OK';
+        httpStatusChip.className = 'text-[11px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300';
+      } catch (err) {
+        httpStatusChip.textContent = 'Error';
+        httpStatusChip.className = 'text-[11px] px-2 py-0.5 rounded bg-rose-950 text-rose-300';
+        apiLogBox.textContent = `Request failed for Trip ${tripId}:\n${err.message}`;
+      } finally {
+        loadingSpinner.classList.add('hidden');
+      }
+    }
+
+    function updateDashboard(data) {
+      document.getElementById('kpiTripId').textContent = data.trip_id;
+      document.getElementById('kpiObsCount').textContent =
+        `${data.n_observations.toLocaleString()} GPS obs • ${data.n_arcs.toLocaleString()} road arcs`;
+
+      document.getElementById('kpiContinuity').textContent = fmtPct(data.route_continuity);
+      document.getElementById('kpiContinuityDelta').textContent =
+        `${fmtDelta(data.continuity_gain)} over Classifier (${fmtPct(data.classifier_only_continuity)})`;
+
+      document.getElementById('kpiLatency').textContent = `${(data.inference_time_sec * 1000).toFixed(0)} ms`;
+      document.getElementById('kpiDisconnects').textContent =
+        `${data.n_disconnects_handled} disconnects bridged`;
+
+      const ev = data.evaluation || {};
+      const hmmM = ev.hmm_metrics || {};
+      const clfM = ev.classifier_only_metrics || {};
+      const imp = ev.improvements || {};
+
+      if (ev.has_ground_truth) {
+        document.getElementById('kpiSeqF1').textContent = fmtPct(hmmM.sequence_f1);
+        document.getElementById('kpiSeqF1Delta').textContent =
+          `${fmtDelta(imp.sequence_f1_delta)} vs. Classifier (${fmtPct(clfM.sequence_f1)})`;
+
+        document.getElementById('kpiTop1Acc').textContent = fmtPct(hmmM.observation_top1_accuracy);
+        document.getElementById('kpiTop1Delta').textContent =
+          imp.obs_top1_delta !== null ? `${fmtDelta(imp.obs_top1_delta)} vs. Classifier` : 'Server-side aligned';
+
+        document.getElementById('kpiLcsJaccard').textContent =
+          `${fmtPct(hmmM.lcs_ratio)} / ${fmtPct(hmmM.jaccard_similarity)}`;
+        document.getElementById('kpiArcCounts').textContent =
+          `${hmmM.n_pred_arcs} pred vs. ${hmmM.n_true_arcs} GT arcs`;
+      } else {
+        document.getElementById('kpiSeqF1').textContent = 'Hidden';
+        document.getElementById('kpiSeqF1Delta').textContent = 'No .route on server';
+        document.getElementById('kpiTop1Acc').textContent = 'Hidden';
+        document.getElementById('kpiLcsJaccard').textContent = `${data.predicted_route_sequence.length} arcs`;
+      }
+
+      // Render comparison table
+      const tbody = document.getElementById('comparisonTableBody');
+      tbody.innerHTML = `
+        <tr>
+          <td class="py-2 font-medium text-slate-300">Route Continuity</td>
+          <td class="py-2 text-slate-400">${fmtPct(data.classifier_only_continuity)}</td>
+          <td class="py-2 text-emerald-400 font-semibold">${fmtPct(data.route_continuity)}</td>
+          <td class="py-2 text-emerald-400">${fmtDelta(data.continuity_gain)}</td>
+        </tr>
+        <tr>
+          <td class="py-2 font-medium text-slate-300">Sequence F1 Score</td>
+          <td class="py-2 text-slate-400">${fmtPct(clfM.sequence_f1)}</td>
+          <td class="py-2 text-blue-400 font-semibold">${fmtPct(hmmM.sequence_f1)}</td>
+          <td class="py-2 text-emerald-400">${fmtDelta(imp.sequence_f1_delta)}</td>
+        </tr>
+        <tr>
+          <td class="py-2 font-medium text-slate-300">Sequence Precision / Recall</td>
+          <td class="py-2 text-slate-400">${fmtPct(clfM.sequence_precision)} / ${fmtPct(clfM.sequence_recall)}</td>
+          <td class="py-2 text-slate-200 font-semibold">${fmtPct(hmmM.sequence_precision)} / ${fmtPct(hmmM.sequence_recall)}</td>
+          <td class="py-2 text-slate-400">Balanced</td>
+        </tr>
+        <tr>
+          <td class="py-2 font-medium text-slate-300">LCS Ratio (Order Fidelity)</td>
+          <td class="py-2 text-slate-400">${fmtPct(clfM.lcs_ratio)}</td>
+          <td class="py-2 text-amber-400 font-semibold">${fmtPct(hmmM.lcs_ratio)}</td>
+          <td class="py-2 text-emerald-400">${fmtDelta(imp.lcs_ratio_delta)}</td>
+        </tr>
+        <tr>
+          <td class="py-2 font-medium text-slate-300">Observation Top-1 Accuracy</td>
+          <td class="py-2 text-slate-400">${fmtPct(clfM.observation_top1_accuracy)}</td>
+          <td class="py-2 text-indigo-400 font-semibold">${fmtPct(hmmM.observation_top1_accuracy)}</td>
+          <td class="py-2 text-emerald-400">${fmtDelta(imp.obs_top1_delta)}</td>
+        </tr>
+      `;
+
+      // Render Folium HTML inside iframe
+      if (data.folium_html) {
+        mapEmptyOverlay.classList.add('hidden');
+        foliumIframe.srcdoc = data.folium_html;
+      }
+
+      // Show clean API response summary (omitting raw HTML string)
+      const logCopy = { ...data, folium_html: `[Folium HTML Map: ${data.folium_html ? data.folium_html.length : 0} chars]` };
+      apiLogBox.textContent = JSON.stringify(logCopy, null, 2);
+    }
+
+    connectBtn.addEventListener('click', loadHealthAndTrips);
+    partitionSelect.addEventListener('change', loadHealthAndTrips);
+    window.addEventListener('DOMContentLoaded', loadHealthAndTrips);
+  </script>
+</body>
+</html>

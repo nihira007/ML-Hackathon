@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import perf_counter
 
@@ -20,7 +21,7 @@ from sklearn.pipeline import Pipeline
 from src.models.advanced.common import (
     NAMES, SEED, candidate_predictions, comparison_row, data_arguments, data_signature,
     evaluate_model, feature_names, fit_model, grouped_cv, importance_table, load_data,
-    package_versions, trip_splits, write_json,
+    package_versions, sample_fit_rows, trip_splits, write_json,
 )
 
 CLASSICAL_TYPES = {
@@ -106,39 +107,52 @@ def proposed_params(trial, name, prefix="", *, max_neighbors=31):
                      "min_child_weight": trial.suggest_int("min_child_weight", 1, 12)}
 
 
-def tune(train, features, name, *, trials, epochs, estimator=None):
+def tune(train, features, name, *, trials, epochs, estimator=None, max_train_rows=None,
+         fold_workers=1):
     # The objective receives only training rows and validation trip indices.
     X, y = train[features], train.is_match
-    splits = trip_splits(train)
+    splits = [(sample_fit_rows(train, fit, max_train_rows), val) for fit, val in trip_splits(train)]
     prefix = estimator.steps[-1][0] + "__" if isinstance(estimator, Pipeline) else ""
     max_neighbors = min(31, min(len(fit) for fit, _ in splits))
 
     def objective(trial):
         params = proposed_params(trial, name, prefix, max_neighbors=max_neighbors)
-        scores = []
-        for fit, val in splits:
+
+        def score_fold(split):
+            fit, val = split
             model, _ = fit_model(name, X.iloc[fit], y.iloc[fit], params=params,
                                  epochs=epochs, estimator=estimator, max_rows=100000)
             probabilities = model.predict_proba(X.iloc[val])[:, 1].astype("float64")
-            scores.append(log_loss(y.iloc[val], probabilities, labels=[0, 1]))
+            return log_loss(y.iloc[val], probabilities, labels=[0, 1])
+
+        # Keep the search sequential for seeded TPE. Only independent folds run in parallel.
+        scores = list(pool.map(score_fold, splits)) if fold_workers > 1 else list(map(score_fold, splits))
         trial.set_user_attr("fold_log_loss", scores)
         return float(np.mean(scores))
 
+    if name == "mlp":
+        fold_workers = 1  # MLP's threadpool limits are process-wide.
     study = optuna.create_study(direction="minimize", sampler=optuna.samplers.TPESampler(seed=SEED))
-    study.optimize(objective, n_trials=trials, n_jobs=1)
+    with ThreadPoolExecutor(max_workers=fold_workers) as pool:
+        study.optimize(objective, n_trials=trials, n_jobs=1)
     best_params = proposed_params(optuna.trial.FixedTrial(study.best_params), name, prefix,
                                   max_neighbors=max_neighbors)
     return study, best_params
 
 
 def run_tuning(train, test, features, advanced, output, artifacts, *, trials, epochs,
-               signature, classical_path=None, classical_estimator=None, smoke=False):
+               signature, classical_path=None, classical_estimator=None, smoke=False, fold_workers=1,
+               feature_representation=None):
     if not smoke and classical_path is None:
         raise ValueError("Person 2's real v2 comparison CSV is required before official tuning")
     if trials < (2 if smoke else 35):
         raise ValueError("Use at least 35 trials for the official run or two for a smoke run")
     if sorted(record["model"] for record in advanced) != sorted(NAMES):
         raise ValueError("Expected exactly one v2 baseline for each of LightGBM, XGBoost, and MLP")
+    if classical_path is not None:
+        classical = pd.read_csv(classical_path)
+        if "data_signature" in classical and not classical.data_signature.eq(":".join(signature)).all():
+            raise ValueError("The classical comparison used a different candidate table or feature manifest")
     for record in advanced:
         if record["data_signature"] != signature or record["feature_version"] != "v2":
             raise ValueError("Re-run all advanced baselines on these exact v2 inputs before tuning")
@@ -148,6 +162,7 @@ def run_tuning(train, test, features, advanced, output, artifacts, *, trials, ep
     winner = selection.iloc[0]
     name = winner.slug
     estimator = None
+    max_train_rows = None
     if name in CLASSICAL_TYPES:
         if classical_estimator is None:
             raise ValueError(
@@ -158,12 +173,16 @@ def run_tuning(train, test, features, advanced, output, artifacts, *, trials, ep
         classifier = estimator.steps[-1][1] if isinstance(estimator, Pipeline) else estimator
         if not isinstance(classifier, CLASSICAL_TYPES[name]):
             raise ValueError(f"The supplied estimator does not match the selected {winner.model_name}.")
+        if pd.notna(winner.get("max_train_rows")):
+            max_train_rows = int(winner.max_train_rows)
 
     output.mkdir(parents=True, exist_ok=True)
     artifacts.mkdir(parents=True, exist_ok=True)
     selection.to_csv(output / "model_selection.csv", index=False)
     start = perf_counter()
-    study, best_params = tune(train, features, name, trials=trials, epochs=epochs, estimator=estimator)
+    study, best_params = tune(train, features, name, trials=trials, epochs=epochs,
+                              estimator=estimator, max_train_rows=max_train_rows,
+                              fold_workers=fold_workers)
     search_seconds = perf_counter() - start
     trials_frame = study.trials_dataframe(attrs=("number", "value", "duration", "params", "state", "user_attrs"))
     trials_frame["duration_seconds"] = trials_frame.pop("duration").dt.total_seconds()
@@ -177,9 +196,11 @@ def run_tuning(train, test, features, advanced, output, artifacts, *, trials, ep
 
     comparison = []
     for label, params in (("untuned", None), ("tuned", best_params)):
-        cv, _ = grouped_cv(train, features, name, params=params, epochs=epochs, estimator=estimator)
+        cv, _ = grouped_cv(train, features, name, params=params, epochs=epochs, estimator=estimator,
+                           max_train_rows=max_train_rows)
         model, probabilities, record = evaluate_model(
             train, test, features, name, cv, params=params, epochs=epochs, estimator=estimator,
+            max_train_rows=max_train_rows,
         )
         record["model_name"] = str(winner.model_name)
         comparison.append({"version": label, **comparison_row(record)})
@@ -213,9 +234,13 @@ def run_tuning(train, test, features, advanced, output, artifacts, *, trials, ep
         },
         "tuning_wall_seconds": search_seconds, "summed_trial_seconds": float(trials_frame.duration_seconds.sum()),
         "train_trips": train.trip_id.nunique(), "student_test_trips": test.trip_id.nunique(),
+        "training_candidate_rows": len(train), "final_fit_candidate_rows": record["fit_candidate_rows"],
+        "max_train_rows": max_train_rows,
+        "search_fold_workers": 1 if name == "mlp" else fold_workers,
     }
     write_json(artifacts / "final_model_meta.json", {
         **summary, "model": name, "feature_columns": features, "match_class": 1,
+        "feature_representation": feature_representation,
         "threshold": 0.5, "software": package_versions(), "exact_reload_verified": True,
     })
     write_json(output / "tuning_summary.json", summary)
@@ -233,6 +258,9 @@ def main():
     parser.add_argument("--output", type=Path, default=Path("outputs/tuning"))
     parser.add_argument("--artifacts", type=Path, default=Path("artifacts"))
     parser.add_argument("--trials", type=int, default=35)
+    parser.add_argument("--fold-workers", type=int, choices=range(1, 6), default=1)
+    parser.add_argument("--feature-representation", choices=("raw", "transformed"),
+                        help="Feature representation expected by the exported estimator")
     args = parser.parse_args()
     if args.epochs < 1 or args.trials < 35:
         parser.error("Use a positive epoch count and at least 35 Optuna trials.")
@@ -243,7 +271,8 @@ def main():
     advanced = [json.loads((args.advanced / f"{name}_metrics.json").read_text(encoding="utf-8")) for name in NAMES]
     run_tuning(train, test, features, advanced, args.output, args.artifacts, trials=args.trials,
                epochs=args.epochs, signature=data_signature(args.train, args.test, args.features),
-               classical_path=args.classical, classical_estimator=args.classical_estimator)
+               classical_path=args.classical, classical_estimator=args.classical_estimator,
+               fold_workers=args.fold_workers, feature_representation=args.feature_representation)
 
 
 if __name__ == "__main__":

@@ -76,7 +76,7 @@ def create_folium_map(
         m = folium.Map(
             location=[mean_lat, mean_lon],
             zoom_start=14,
-            tiles="CartoDB positron",
+            tiles="OpenStreetMap",
             control_scale=True,
         )
 
