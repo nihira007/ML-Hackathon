@@ -1,11 +1,11 @@
 """Unified End-to-End Inference & Server-Side Evaluation Pipeline for PathSnap.
 
-Implements the two strictly separated entry points required by `prompts/05_POST_MERGE_INTEGRATION.md`:
+Implements the two strictly separated entry points:
 1. `predict_trip(trip_dir, artifacts_dir="artifacts", ...) -> dict`
    - Reads ONLY `<trip_id>.track`, `<trip_id>.nodes`, and `<trip_id>.arcs` (NEVER reads `.route`).
-   - Runs Person 1's `extract_trip_features` -> Person 3's `artifacts/final_model.joblib` ->
-     Person 4's `RoadGraph` + `ViterbiDecoder` (`artifacts/hmm_config.json`).
-2. `evaluate_trip_server_side(prediction, route_file_path, trip_dir=None) -> dict`
+   - Runs `extract_trip_features` -> `artifacts/final_model.joblib` ->
+     `RoadGraph` + `ViterbiDecoder` (`artifacts/hmm_config.json`).
+2. `evaluate_trip_server_side(prediction, route_file_path=None, trip_dir=None, include_map_html=True) -> dict`
    - Strictly separated server-side evaluation against `<trip_id>.route`.
    - Computes observation-level Top-1 accuracy (for both Classifier-Only and Classifier+HMM),
      Route Continuity, and Sequence-level Precision / Recall / F1 / Jaccard / LCS accuracy.
@@ -37,6 +37,47 @@ from src.hmm.route_metrics import (
 from src.hmm.viterbi import HMMConfig, ViterbiDecoder
 from src.viz.folium_map import create_folium_map
 
+_ARTIFACT_CACHE: Dict[str, Dict[str, Any]] = {}
+
+
+def load_artifacts(artifacts_dir: str | Path = "artifacts") -> Dict[str, Any]:
+    """Load and cache preprocessor, feature columns, final tuned model, and HMM config."""
+    art_dir = Path(artifacts_dir).resolve()
+    key = str(art_dir)
+    if key in _ARTIFACT_CACHE:
+        return _ARTIFACT_CACHE[key]
+
+    preproc_path = art_dir / "preprocessor.joblib"
+    feat_cols_path = art_dir / "feature_columns.json"
+    model_path = art_dir / "final_model.joblib"
+    meta_path = art_dir / "final_model_meta.json"
+    hmm_cfg_path = art_dir / "hmm_config.json"
+
+    for req in (preproc_path, feat_cols_path, model_path, hmm_cfg_path):
+        if not req.exists():
+            raise FileNotFoundError(f"Required inference artifact not found: {req}")
+
+    feature_cols: List[str] = json.loads(feat_cols_path.read_text(encoding="utf-8"))
+    model_meta: Dict[str, Any] = (
+        json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
+    )
+    hmm_cfg_dict: Dict[str, Any] = json.loads(hmm_cfg_path.read_text(encoding="utf-8"))
+    valid_cfg = {k: v for k, v in hmm_cfg_dict.items() if k in HMMConfig.__dataclass_fields__}
+    hmm_config = HMMConfig(**valid_cfg)
+
+    bundle = {
+        "artifacts_dir": art_dir,
+        "preprocessor_path": preproc_path,
+        "feature_columns_path": feat_cols_path,
+        "feature_columns": feature_cols,
+        "model": joblib.load(model_path),
+        "model_meta": model_meta,
+        "hmm_config": hmm_config,
+        "hmm_config_dict": hmm_cfg_dict,
+    }
+    _ARTIFACT_CACHE[key] = bundle
+    return bundle
+
 
 def _extract_polyline_from_arcs(road_graph: RoadGraph, arc_ids: List[int]) -> List[List[float]]:
     """Convert a sequence of road arc IDs into a [[lat, lon], ...] polyline."""
@@ -56,6 +97,7 @@ def predict_trip(
     trip_dir: str | Path,
     artifacts_dir: str | Path = "artifacts",
     generate_map: bool = False,
+    include_map_html: bool = False,
     output_map_path: Optional[str | Path] = None,
 ) -> Dict[str, Any]:
     """Run zero-leakage end-to-end route reconstruction on a single trip directory.
@@ -66,16 +108,13 @@ def predict_trip(
     t_total_start = time.perf_counter()
     src_dir = Path(trip_dir)
     trip_id = src_dir.name
-    art_dir = Path(artifacts_dir)
+    bundle = load_artifacts(artifacts_dir)
 
-    preproc_path = art_dir / "preprocessor.joblib"
-    feat_cols_path = art_dir / "feature_columns.json"
-    model_path = art_dir / "final_model.joblib"
-    hmm_cfg_path = art_dir / "hmm_config.json"
-
-    for req in (preproc_path, feat_cols_path, model_path, hmm_cfg_path):
-        if not req.exists():
-            raise FileNotFoundError(f"Required inference artifact not found: {req}")
+    preproc_path = bundle["preprocessor_path"]
+    feat_cols_path = bundle["feature_columns_path"]
+    feature_cols = bundle["feature_columns"]
+    model = bundle["model"]
+    hmm_config = bundle["hmm_config"]
 
     with tempfile.TemporaryDirectory(prefix=f"pathsnap_infer_{trip_id}_") as tmp_root:
         staged_dir = Path(tmp_root) / trip_id
@@ -98,10 +137,7 @@ def predict_trip(
         assert trip_obj.route is None, "Safety check failed: .route must be None during inference"
         road_graph = RoadGraph.from_trip_dir(str(staged_dir), trip_id=trip_id)
 
-    feature_cols: List[str] = json.loads(feat_cols_path.read_text(encoding="utf-8"))
-
     t_cls_start = time.perf_counter()
-    model = joblib.load(model_path)
     pred_probs = np.asarray(model.predict_proba(cand_df[feature_cols])[:, 1], dtype=np.float64)
     cls_time_sec = time.perf_counter() - t_cls_start
 
@@ -136,9 +172,6 @@ def predict_trip(
         )
 
     t_hmm_start = time.perf_counter()
-    hmm_cfg_dict = json.loads(hmm_cfg_path.read_text(encoding="utf-8"))
-    valid_cfg = {k: v for k, v in hmm_cfg_dict.items() if k in HMMConfig.__dataclass_fields__}
-    hmm_config = HMMConfig(**valid_cfg)
     decoder = ViterbiDecoder(hmm_config)
     viterbi_res = decoder.decode(observations, road_graph)
     hmm_time_sec = time.perf_counter() - t_hmm_start
@@ -155,7 +188,7 @@ def predict_trip(
     gps_coords = [[float(row[1]), float(row[0]), float(row[2])] for row in gps_track]
 
     folium_html: Optional[str] = None
-    if generate_map or output_map_path is not None:
+    if generate_map or include_map_html or output_map_path is not None:
         folium_html = create_folium_map(
             trip_id=trip_id,
             gps_points=gps_track,
@@ -167,11 +200,17 @@ def predict_trip(
         )
 
     total_time_sec = time.perf_counter() - t_total_start
+    n_obs = int(len(gps_track))
+    n_cands = int(len(cand_df))
 
     return {
         "trip_id": trip_id,
-        "num_observations": int(len(gps_track)),
-        "num_candidates": int(len(cand_df)),
+        "num_observations": n_obs,
+        "n_observations": n_obs,
+        "num_candidates": n_cands,
+        "n_candidate_rows": n_cands,
+        "n_nodes": int(road_graph.n_nodes),
+        "n_arcs": int(road_graph.n_arcs),
         "predicted_arc_ids_per_obs": hmm_arcs_per_obs,
         "classifier_only_arc_ids_per_obs": cls_only_arcs,
         "predicted_route_sequence": predicted_route_seq,
@@ -182,10 +221,18 @@ def predict_trip(
         "route_continuity": float(hmm_cont),
         "classifier_only_continuity": float(cls_cont),
         "continuity_gain": float(hmm_cont - cls_cont),
+        "log_likelihood": float(viterbi_res["log_likelihood"]),
+        "n_disconnects_handled": int(viterbi_res["n_disconnects_handled"]),
         "feature_extraction_time_sec": float(feat_time_sec),
         "classifier_inference_time_sec": float(cls_time_sec),
         "hmm_decode_time_sec": float(hmm_time_sec),
         "inference_time_sec": float(total_time_sec),
+        "timing_breakdown_sec": {
+            "feature_extraction_sec": round(float(feat_time_sec), 4),
+            "classifier_inference_sec": round(float(cls_time_sec), 4),
+            "hmm_viterbi_sec": round(float(hmm_time_sec), 4),
+            "total_sec": round(float(total_time_sec), 4),
+        },
         "candidate_predictions": cand_df[["trip_id", "obs_idx", "arc_id", "cand_rank", "pred_prob"]],
         "folium_html": folium_html,
     }
@@ -193,17 +240,41 @@ def predict_trip(
 
 def evaluate_trip_server_side(
     prediction: Dict[str, Any],
-    route_file_path: str | Path,
+    route_file_path: Optional[str | Path] = None,
     trip_dir: Optional[str | Path] = None,
+    include_map_html: bool = True,
 ) -> Dict[str, Any]:
-    """Server-side evaluation comparing `predict_trip()` output against ground-truth `<trip_id>.route`."""
-    route_path = Path(route_file_path)
-    if not route_path.exists():
-        raise FileNotFoundError(f"Ground-truth route file not found: {route_path}")
+    """Server-side evaluation comparing `predict_trip()` output against ground-truth `<trip_id>.route`.
 
-    gt_route = np.atleast_1d(np.loadtxt(str(route_path), dtype=np.int64)).astype(int).tolist()
-    t_dir = Path(trip_dir) if trip_dir is not None else route_path.parent
+    Supports being called as:
+      - `evaluate_trip_server_side(prediction, route_file_path, trip_dir=...)`
+      - `evaluate_trip_server_side(prediction, trip_dir)` (where 2nd arg is a directory)
+    """
     trip_id = prediction["trip_id"]
+    resolved_dir: Optional[Path] = Path(trip_dir) if trip_dir is not None else None
+    resolved_route: Optional[Path] = None
+
+    if route_file_path is not None:
+        p = Path(route_file_path)
+        if p.is_dir():
+            resolved_dir = p
+            resolved_route = p / f"{trip_id}.route"
+        else:
+            resolved_route = p
+            if resolved_dir is None:
+                resolved_dir = p.parent
+    elif resolved_dir is not None:
+        resolved_route = resolved_dir / f"{trip_id}.route"
+
+    if resolved_route is None or not resolved_route.exists():
+        return {
+            "trip_id": trip_id,
+            "has_ground_truth": False,
+            "num_observations": int(prediction["num_observations"]),
+        }
+
+    gt_route = np.atleast_1d(np.loadtxt(str(resolved_route), dtype=np.int64)).astype(int).tolist()
+    t_dir = resolved_dir if resolved_dir is not None else resolved_route.parent
 
     hmm_seq_metrics = compute_sequence_metrics(prediction["predicted_route_sequence"], gt_route, deduplicate=False)
     cls_seq_metrics = compute_sequence_metrics(prediction["classifier_only_arc_ids_per_obs"], gt_route)
@@ -222,8 +293,32 @@ def evaluate_trip_server_side(
     cls_top1_all = float(np.mean(cls_arcs == gt_arcs_arr))
     hmm_top1_all = float(np.mean(hmm_arcs == gt_arcs_arr))
 
+    hmm_metrics_full = {
+        **hmm_seq_metrics,
+        "observation_top1_accuracy": round(hmm_top1_all, 6),
+        "route_continuity": round(float(prediction["route_continuity"]), 6),
+    }
+    cls_metrics_full = {
+        **cls_seq_metrics,
+        "observation_top1_accuracy": round(cls_top1_all, 6),
+        "route_continuity": round(float(prediction["classifier_only_continuity"]), 6),
+    }
+
+    folium_html = prediction.get("folium_html")
+    if include_map_html:
+        road_graph = RoadGraph.from_trip_dir(str(t_dir), trip_id=trip_id)
+        folium_html = create_folium_map(
+            trip_id=trip_id,
+            gps_points=trip_obj.track,
+            road_graph=road_graph,
+            ground_truth_route=gt_route,
+            predicted_route=prediction["predicted_route_sequence"],
+            classifier_only_route=prediction["classifier_only_route_sequence"],
+        )
+
     return {
         "trip_id": trip_id,
+        "has_ground_truth": True,
         "num_observations": int(prediction["num_observations"]),
         "num_gt_route_arcs": int(len(gt_route)),
         "num_pred_route_arcs": int(len(prediction["predicted_route_sequence"])),
@@ -238,5 +333,18 @@ def evaluate_trip_server_side(
         "seq_f1_gain": round(
             float(hmm_seq_metrics.get("sequence_f1", 0.0) - cls_seq_metrics.get("sequence_f1", 0.0)), 6
         ),
+        "hmm_metrics": hmm_metrics_full,
+        "classifier_only_metrics": cls_metrics_full,
+        "improvements": {
+            "continuity_delta": round(float(prediction["continuity_gain"]), 6),
+            "sequence_f1_delta": round(
+                float(hmm_seq_metrics.get("sequence_f1", 0.0) - cls_seq_metrics.get("sequence_f1", 0.0)), 6
+            ),
+            "lcs_ratio_delta": round(
+                float(hmm_seq_metrics.get("lcs_ratio", 0.0) - cls_seq_metrics.get("lcs_ratio", 0.0)), 6
+            ),
+            "obs_top1_delta": round(hmm_top1_all - cls_top1_all, 6),
+        },
         "inference_time_sec": round(float(prediction["inference_time_sec"]), 6),
+        "folium_html": folium_html,
     }
