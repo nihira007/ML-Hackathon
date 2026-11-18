@@ -15,7 +15,7 @@ All three models were evaluated under the exact same 5-fold trip-grouped cross-v
 | **Feature Scaling** | None (`cand_rank == 0`) | `StandardScaler` (per-fold train) | `StandardScaler` (per-fold train) | Unscaled (scale-invariant trees) |
 | **5-Fold CV Top-1 Accuracy (Mean ± SD)** | $0.5421 \pm 0.1180$ | $0.6639 \pm 0.1139$ | $0.6965 \pm 0.1161$ | **$0.7722 \pm 0.1122$** |
 | **5-Fold CV Macro F1 (Mean ± SD)** | — | $0.7217 \pm 0.0591$ | $0.8164 \pm 0.0552$ | **$0.8492 \pm 0.0685$** |
-| **5-Fold CV Log Loss (Mean ± SD)** | — | $0.4061 \pm 0.0905$ | $0.5973 \pm 0.3411$ | **$0.1807 \pm 0.0590$** |
+| **5-Fold CV Log Loss (Mean ± SD)** | — | $0.4061 \pm 0.0905$ | $0.5973 \pm 0.3924$ | **$0.1807 \pm 0.0590$** |
 | **Train Fold Mean Top-1 Accuracy** | $0.5421$ | $0.6821$ | $1.0000$ | $0.8760$ |
 | **Train Fold Mean Macro F1** | — | $0.7371$ | $1.0000$ | $0.9101$ |
 | **Macro F1 Generalization Gap (Train − Val)** | — | **$+0.0154$** (Linear underfitting) | $+0.1836$ (Instance memorization) | **$+0.0609$** (Depth/leaf controlled) |
@@ -28,8 +28,8 @@ All three models were evaluated under the exact same 5-fold trip-grouped cross-v
 | **`student_test` Binary Log Loss** | — | $0.3489$ | $0.3117$ | **$0.1441$** |
 | **`student_test` Brier Score** | — | $0.1117$ | $0.0446$ | **$0.0403$** |
 | **`student_test` Expected Calibration Error (ECE)** | — | $0.1772$ | **$0.0114$** | $0.0634$ |
-| **Wall-Clock Full Train Time (s)** | — | $2.48\text{ s}$ | **$0.20\text{ s}$** | $44.46\text{ s}$ |
-| **Wall-Clock `student_test` Inference Time (s)** | — | **$0.021\text{ s}$** | $7.82\text{ s}$ | $0.97\text{ s}$ |
+| **Wall-Clock Full Train Time (s)** | — | $2.48\text{ s}$ | **$0.34\text{ s}$** | $44.46\text{ s}$ |
+| **Wall-Clock `student_test` Inference Time (s)** | — | **$0.021\text{ s}$** | $7.80\text{ s}$ | $0.97\text{ s}$ |
 
 ---
 
@@ -77,7 +77,7 @@ All three models were evaluated under the exact same 5-fold trip-grouped cross-v
   $$\hat{P}(y=1 \mid \tilde{\mathbf{x}}) = \frac{\sum_{j \in \mathcal{N}_k(\tilde{\mathbf{x}})} w_j \, y_j}{\sum_{j \in \mathcal{N}_k(\tilde{\mathbf{x}})} w_j}, \quad \text{where } w_j = \frac{1}{\max\big(\|\tilde{\mathbf{x}} - \tilde{\mathbf{x}}_j\|_2, \epsilon\big)}$$
 
 #### C. Experimental Performance & Overfitting/Underfitting Evidence
-- **Out-of-Sample `student_test` Metrics:** Top-1 Accuracy = **$77.36\%$**, Top-3 Accuracy = **$95.16\%$**, Candidate Macro F1 = **$0.8530$**, Positive Binary F1 = **$0.7407$**, Precision = **$0.7865$**, Recall = **$0.6999$**, Log Loss = **$0.3117$**, Brier Score = **$0.0446$**, Confusion Matrix = `[[TN=125,088, FP=9,032], [FN=5,749, TP=13,411]]`.
+- **Out-of-Sample `student_test` Metrics:** Top-1 Accuracy = **$77.36\%$**, Top-3 Accuracy = **$95.16\%$**, Candidate Macro F1 = **$0.8530$**, Positive Binary F1 = **$0.7407$**, Precision = **$0.7865$**, Recall = **$0.6999$**, Log Loss = **$0.3117$**, Brier Score = **$0.0446$**, Confusion Matrix = `[[TN=130,480, FP=3,640], [FN=5,749, TP=13,411]]`.
 - **Overfitting Diagnosis:** The gap between exact training interpolation ($\text{Train Macro F1} = 1.0000$) and out-of-fold validation ($\text{CV Macro F1} = 0.8164 \pm 0.0552$) exemplifies classic non-parametric variance in 21 dimensions.
 
 ---
