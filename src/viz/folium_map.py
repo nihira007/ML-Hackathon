@@ -305,8 +305,8 @@ def _generate_standalone_leaflet_html(
     <script>
         const map = L.map('map').setView([{center_lat}, {center_lon}], 14);
 
-        const tileLayer = L.tileLayer('https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}{{r}}.png', {{
-            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        const tileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{{z}}/{{y}}/{{x}}', {{
+            attribution: 'Esri, HERE, Garmin, OpenStreetMap',
             maxZoom: 19
         }}).addTo(map);
 
