@@ -41,8 +41,8 @@ All 3 models were trained and evaluated on the exact same 21 v2 features (`7` sp
 | **Student-Test Precision / Recall** | $0.4355$ / $0.9273$ | **$0.7865$** / $0.6999$ | $0.7290$ / **$0.9311$** |
 | **Student-Test Log Loss** | $0.3489$ | $0.3117$ | **$0.1441$** |
 | **Student-Test Brier Score** | $0.1117$ | $0.0446$ | **$0.0403$** |
-| **Wall-Clock Train Time** | $2.48$ s | **$0.20$ s** | $44.46$ s |
-| **Student-Test Inference Time** | **$0.021$ s** | $7.82$ s | $0.97$ s |
+| **Wall-Clock Train Time** | $2.48$ s | **$0.34$ s** | $44.46$ s |
+| **Student-Test Inference Time** | **$0.021$ s** | $7.80$ s | $0.97$ s |
 
 ### Impact of v1 $\rightarrow$ v2 Feature Engineering
 Upgrading from the 7 v1 pure-distance features to the 21 v2 domain features (adding heading alignment `heading_diff_cos`, `heading_diff_deg`, observation-relative `cand_dist_zscore`, temporal continuity `neighbor_arc_continuity`, and road-graph node degrees) boosted Student-Test Top-1 Accuracy by **+27.52 percentage points** for Logistic Regression ($46.81\% \rightarrow 74.33\%$), **+23.03 percentage points** for Distance-Weighted KNN ($54.33\% \rightarrow 77.36\%$), and enabled Random Forest to reach **$84.74\%$ Top-1 Accuracy** and **$97.97\%$ Top-3 Accuracy** prior to Viterbi sequence decoding.

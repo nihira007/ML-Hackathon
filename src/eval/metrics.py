@@ -213,9 +213,6 @@ def compute_top1_accuracy(
     if "cand_rank" in df.columns:
         sort_cols.append("cand_rank")
         ascending.append(True)
-    elif "arc_id" in df.columns:
-        sort_cols.append("arc_id")
-        ascending.append(True)
 
     sorted_df = df.sort_values(by=sort_cols, ascending=ascending, kind="mergesort")
     top1_df = sorted_df.drop_duplicates(subset=list(group_cols), keep="first")
