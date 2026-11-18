@@ -1,9 +1,9 @@
 {
-  "beta": 15.0,
-  "emission_weight": 1.5,
-  "disconnect_penalty": 50.0,
-  "max_route_dist_m": 1500.0,
-  "gap_threshold_s": 5.0,
+  "beta": 25.0,
+  "emission_weight": 2.0,
+  "disconnect_penalty": 30.0,
+  "max_route_dist_m": 1000.0,
+  "gap_threshold_s": 3.0,
   "eps": 1e-07,
   "description": "PathSnap Person 4 Optimal Tuned HMM/Viterbi Configuration"
 }
