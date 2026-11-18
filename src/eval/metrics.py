@@ -453,9 +453,13 @@ def run_group_kfold_cv(
         fit_train_idx = np.arange(len(train_idx))
         if max_train_samples_per_fold is not None and len(train_idx) > max_train_samples_per_fold:
             rng = np.random.default_rng(random_state + fold_idx)
-            fit_train_idx = np.sort(
-                rng.choice(len(train_idx), size=max_train_samples_per_fold, replace=False)
-            )
+            fold_train_sub = df.iloc[train_idx]
+            obs_codes = fold_train_sub.groupby(["trip_id", "obs_idx"], sort=False).ngroup().to_numpy()
+            n_obs_total = int(obs_codes.max()) + 1
+            avg_cands_per_obs = max(1.0, len(train_idx) / float(n_obs_total))
+            target_obs = max(1, min(n_obs_total, int(max_train_samples_per_fold / avg_cands_per_obs)))
+            chosen_obs = rng.choice(n_obs_total, size=target_obs, replace=False)
+            fit_train_idx = np.nonzero(np.isin(obs_codes, chosen_obs))[0]
 
         model = model_fn()
         with Timer() as fit_timer:
