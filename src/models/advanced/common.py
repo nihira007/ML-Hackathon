@@ -47,7 +47,7 @@ def feature_names(path):
     if not isinstance(names, list) or not names or not all(isinstance(n, str) and n for n in names):
         raise ValueError(f"Expected an ordered list of feature names in {path}")
     # Rank is available at inference. Route labels and row identifiers are not features.
-    forbidden = set(METADATA) - {"cand_rank"}
+    forbidden = (set(METADATA) - {"cand_rank"}) | {"label_ok"}
     if len(set(names)) != len(names) or forbidden.intersection(names):
         raise ValueError("Feature manifest has duplicate names or includes a protected metadata column")
     return names
