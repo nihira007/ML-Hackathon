@@ -4,12 +4,6 @@
     X_df = extract_trip_features(trip_dir, "artifacts/preprocessor.joblib", "artifacts/feature_columns.json")
     probs = model.predict_proba(X_df[feature_cols])[:, 1]
 
-Reads ONLY ``<id>.track``, ``<id>.nodes`` and ``<id>.arcs`` - ``.route`` is never opened, listed or required
-(``load_trip(..., load_route=False)``). The returned frame has the identifier columns
-``trip_id, obs_idx, timestamp, arc_id, cand_rank`` followed by the feature columns in EXACTLY the order of
-``feature_columns.json``, already passed through the train-fitted preprocessor (float32), i.e. identical in
-layout to ``data/processed/*_features.parquet`` (minus the label columns ``is_match`` / ``label_ok``).
-
 Robustness (every observation gets at least one row):
 * GPS rows with NaN / out-of-range coordinates are linearly interpolated by the loader (obs_idx stays aligned);
 * an observation with no arc within the search radius (outlier / sparse area) falls back to its exact nearest
