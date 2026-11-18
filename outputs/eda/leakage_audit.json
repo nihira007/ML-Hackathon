@@ -1,0 +1,13 @@
+{
+  "n_train_trips": 80,
+  "n_student_test_trips": 10,
+  "trip_id_overlap": [],
+  "overlap_count": 0,
+  "preprocessor_fit_rows": 1510241,
+  "train_rows_available_for_fit": 1510241,
+  "preprocessor_fit_on_train_only": true,
+  "train_trip_ids_in_fit": 80,
+  "test_trip_ids_in_fit": 0,
+  "route_used_for_features": false,
+  "passed": true
+}
