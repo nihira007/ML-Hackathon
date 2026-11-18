@@ -70,5 +70,5 @@ Top-K=10 arcs within 100 m per GPS fix (exact nearest-K fallback with `is_fallba
 
 ## 7. Inference timing
 
-`extract_trip_features` on the 10 student_test trips: 4.30 s in total (0.225 ms per GPS fix; slowest trip 0.94 s for 3,958 fixes); fixes without any candidate: 0.
+`extract_trip_features` on the 10 student_test trips: 1.75 s in total (0.092 ms per GPS fix; slowest trip 0.34 s for 3,958 fixes); fixes without any candidate: 0.
 

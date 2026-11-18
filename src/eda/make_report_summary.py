@@ -1,7 +1,7 @@
 """Phase 5 - generate ``outputs/eda/eda_report_summary.md`` (Technical Report Section 2.2 material).
 
     python -m src.eda.make_report_summary
-
+    
 Every number is read from the artifacts produced by run_eda / build_features / inference_features
 (or recomputed from the data here); only the surrounding prose is static.
 Run after:  run_eda  ->  build_features  ->  inference_features --benchmark
@@ -155,3 +155,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+

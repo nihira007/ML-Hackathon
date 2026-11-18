@@ -1,6 +1,6 @@
 """Phase 5 - verification of Person 1's data / feature pipeline.
 
-    python -m pytest src/features/test_data_pipeline.py -q        # or:  python src/features/test_data_pipeline.py
+    python src/features/test_data_pipeline.py
 
 Requires ``python -m src.features.build_features`` to have been run (parquets + artifacts exist).
 """
@@ -139,3 +139,5 @@ def test_empty_graph_gives_explicit_marker(tmp_path, cols):
 
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-q"]))
+
+
