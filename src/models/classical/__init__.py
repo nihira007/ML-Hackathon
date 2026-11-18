@@ -6,6 +6,7 @@ from src.models.classical.calibration_and_error_analysis import (
     run_calibration_and_error_analysis,
 )
 from src.models.classical.data_utils import V1_SPATIAL_FEATURE_COLUMNS, V2_FEATURE_COLUMNS, load_feature_datasets
+from src.models.classical.generate_phase5_plots import generate_all_phase5_plots
 from src.models.classical.run_all_classical import run_all_classical_models
 from src.models.classical.train_knn import build_knn_estimator, run_knn_pipeline
 from src.models.classical.train_logreg import build_logreg_estimator, run_logreg_pipeline
@@ -25,4 +26,5 @@ __all__ = [
     "compute_ece_and_bins",
     "plot_calibration_curves",
     "run_calibration_and_error_analysis",
+    "generate_all_phase5_plots",
 ]
