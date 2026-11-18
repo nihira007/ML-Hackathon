@@ -1,3 +1,8 @@
-model_name,algorithm_family,mean_classifier_continuity,mean_hmm_continuity,continuity_gain,mean_classifier_top1,mean_hmm_top1,top1_gain
-Logistic Regression (L2),Linear / Probabilistic,0.9001,0.9998,0.0998,0.49,0.5551,0.0651
-Distance-Weighted KNN (k=15),Instance-Based,0.8942,0.9969,0.1027,0.5561,0.6413,0.0851
+model_name,algorithm_family,mean_classifier_continuity,mean_hmm_continuity,continuity_gain,student_test_top1
+Logistic Regression,Linear / Probabilistic,0.9829,0.9988,0.0159,0.8669
+Distance-Weighted KNN,Instance-based / Non-parametric,0.9711,0.9988,0.0277,0.7936
+Random Forest,Bagging / Tree Ensemble,0.9739,0.9988,0.0249,0.872
+LightGBM,Gradient Boosted Decision Trees (Leaf-wise),0.9825,0.9988,0.0163,0.8885
+XGBoost,Gradient Boosted Decision Trees (Depth-wise),0.9825,0.9988,0.0163,0.8807
+MLP Neural Network,Feed-Forward Multi-Layer Perceptron,0.9793,0.9988,0.0195,0.8745
+XGBoost (Optuna Tuned),Bayesian-Optimized GBDT (35 TPE Trials),0.9831,0.9988,0.0157,0.8858

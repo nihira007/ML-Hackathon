@@ -25,7 +25,8 @@ from src.viz.folium_map import create_folium_map
 
 
 def generate_representative_maps() -> None:
-    parquet_path = "outputs/models/classical/logreg_student_test_preds.parquet"
+    tuned_pq = Path("outputs/tuning/tuned_student_test_preds.parquet")
+    parquet_path = str(tuned_pq) if tuned_pq.exists() else "outputs/models/classical/logreg_student_test_preds.parquet"
     test_dir = Path("Student folder/student_test")
     maps_out = Path("outputs/maps")
     maps_out.mkdir(parents=True, exist_ok=True)

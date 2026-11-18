@@ -44,6 +44,9 @@ def test_prediction_parquets_and_metric_consistency() -> None:
     comp_df = pd.read_csv(OUTPUT_DIR / "classical_comparison.csv")
     assert list(comp_df["model_name"]) == [m[0] for m in EXPECTED_MODELS]
 
+    test_parquet = PROJECT_ROOT / "data" / "processed" / "student_test_features.parquet"
+    expected_rows = len(pd.read_parquet(test_parquet, columns=["trip_id"])) if test_parquet.exists() else 153280
+
     with (OUTPUT_DIR / "calibration_audit.json").open("r", encoding="utf-8") as fh:
         cal_audit = json.load(fh)
 
@@ -54,7 +57,7 @@ def test_prediction_parquets_and_metric_consistency() -> None:
         pred_df = pd.read_parquet(parquet_path)
         validate_prediction_dataframe(pred_df)
         assert list(pred_df.columns) == PREDICTION_COLUMNS
-        assert len(pred_df) == 153280
+        assert len(pred_df) == expected_rows
         assert pred_df["trip_id"].nunique() == 10
         assert pred_df.groupby(["trip_id", "obs_idx"], sort=False).ngroups == 19160
 

@@ -1,14 +1,14 @@
 {
   "n_trips": 10,
-  "mean_cls_continuity": 0.9001,
-  "mean_hmm_continuity": 0.9998,
-  "mean_continuity_gain": 0.0998,
-  "mean_cls_top1": 0.49,
-  "mean_hmm_top1": 0.5551,
-  "mean_top1_gain": 0.0651,
-  "mean_cls_seq_f1": 0.6153,
-  "mean_hmm_seq_f1": 0.6383,
-  "mean_seq_f1_gain": 0.023,
-  "total_hmm_runtime_sec": 19.3217,
-  "best_improvement_trip": "00000052"
+  "mean_cls_continuity": 0.9831,
+  "mean_hmm_continuity": 0.9988,
+  "mean_continuity_gain": 0.0157,
+  "mean_cls_top1": 0.8974,
+  "mean_hmm_top1": 0.9145,
+  "mean_top1_gain": 0.0171,
+  "mean_cls_seq_f1": 0.8814,
+  "mean_hmm_seq_f1": 0.9036,
+  "mean_seq_f1_gain": 0.0222,
+  "total_hmm_runtime_sec": 4.594,
+  "best_improvement_trip": "00000056"
 }

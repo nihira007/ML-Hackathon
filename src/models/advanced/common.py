@@ -142,7 +142,12 @@ def build_model(name, params=None):
     return make_pipeline(imputer, scaler, model)
 
 
-def fit_model(name, X, y, *, params=None, epochs=20, validation=None, estimator=None):
+def fit_model(name, X, y, *, params=None, epochs=20, validation=None, estimator=None, max_rows=200000):
+    if max_rows is not None and len(X) > max_rows:
+        rng = np.random.default_rng(SEED)
+        idx = np.sort(rng.choice(len(X), size=max_rows, replace=False))
+        X = X.iloc[idx]
+        y = y.iloc[idx]
     if estimator is None:
         model = build_model(name, params)
     else:
@@ -158,6 +163,10 @@ def fit_model(name, X, y, *, params=None, epochs=20, validation=None, estimator=
     history = []
     if validation is not None:
         X_val, y_val = validation
+        if len(X_val) > 80000:
+            rng_v = np.random.default_rng(SEED + 1)
+            v_idx = np.sort(rng_v.choice(len(X_val), size=80000, replace=False))
+            X_val, y_val = X_val.iloc[v_idx], y_val.iloc[v_idx]
         X_val = scaling.transform(X_val)
     with threadpool_limits(limits=2):
         for epoch in range(1, epochs + 1):

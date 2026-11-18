@@ -118,7 +118,7 @@ def tune(train, features, name, *, trials, epochs, estimator=None):
         scores = []
         for fit, val in splits:
             model, _ = fit_model(name, X.iloc[fit], y.iloc[fit], params=params,
-                                 epochs=epochs, estimator=estimator)
+                                 epochs=epochs, estimator=estimator, max_rows=100000)
             probabilities = model.predict_proba(X.iloc[val])[:, 1].astype("float64")
             scores.append(log_loss(y.iloc[val], probabilities, labels=[0, 1]))
         trial.set_user_attr("fold_log_loss", scores)

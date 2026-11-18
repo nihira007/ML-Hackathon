@@ -1,0 +1,158 @@
+{
+  "smoke": false,
+  "feature_version": "v2",
+  "data_signature": [
+    "ef39b7a93419295fa7bad2b9b7af968dd41a6fb30291317f7b01aecfc244a9f2",
+    "057119a50d3b1a415fbde613b1b8db94890cac8f010f8e4773f2ba6e7c05cb4c",
+    "f7e6a912c3f9a6e2b814b73b7d83a15f053429188c84f13fe19f39ed4079f02a"
+  ],
+  "selected_model": "xgb",
+  "selected_model_name": "XGBoost",
+  "baseline_models_compared": 6,
+  "selection_rank_weights": {
+    "cv_macro_f1_mean": 0.4,
+    "student_test_top1_accuracy": 0.3,
+    "student_test_log_loss": 0.2,
+    "inference_time_sec": 0.1
+  },
+  "objective": "Minimize mean candidate log loss across five trip-grouped training folds",
+  "sampler": "TPESampler",
+  "seed": 42,
+  "trials": 35,
+  "completed_trials": 35,
+  "best_trial": 10,
+  "best_cv_log_loss": 0.07977957655864376,
+  "best_params": {
+    "n_estimators": 200,
+    "learning_rate": 0.04649128682881624,
+    "subsample": 0.9313938915639582,
+    "colsample_bytree": 0.7958334304404576,
+    "reg_alpha": 3.058050323757543e-05,
+    "reg_lambda": 2.544769802734904,
+    "max_depth": 7,
+    "min_child_weight": 3
+  },
+  "search_space": {
+    "n_estimators": {
+      "name": "IntDistribution",
+      "attributes": {
+        "low": 80,
+        "high": 320,
+        "step": 40,
+        "log": false
+      }
+    },
+    "learning_rate": {
+      "name": "FloatDistribution",
+      "attributes": {
+        "low": 0.015,
+        "high": 0.2,
+        "log": true,
+        "step": null
+      }
+    },
+    "subsample": {
+      "name": "FloatDistribution",
+      "attributes": {
+        "low": 0.65,
+        "high": 1.0,
+        "log": false,
+        "step": null
+      }
+    },
+    "colsample_bytree": {
+      "name": "FloatDistribution",
+      "attributes": {
+        "low": 0.65,
+        "high": 1.0,
+        "log": false,
+        "step": null
+      }
+    },
+    "reg_alpha": {
+      "name": "FloatDistribution",
+      "attributes": {
+        "low": 1e-05,
+        "high": 5.0,
+        "log": true,
+        "step": null
+      }
+    },
+    "reg_lambda": {
+      "name": "FloatDistribution",
+      "attributes": {
+        "low": 0.001,
+        "high": 10.0,
+        "log": true,
+        "step": null
+      }
+    },
+    "max_depth": {
+      "name": "IntDistribution",
+      "attributes": {
+        "low": 3,
+        "high": 8,
+        "step": 1,
+        "log": false
+      }
+    },
+    "min_child_weight": {
+      "name": "IntDistribution",
+      "attributes": {
+        "low": 1,
+        "high": 12,
+        "step": 1,
+        "log": false
+      }
+    }
+  },
+  "tuning_wall_seconds": 333.19286779200047,
+  "summed_trial_seconds": 327.89497,
+  "train_trips": 80,
+  "student_test_trips": 10,
+  "model": "xgb",
+  "feature_columns": [
+    "perp_dist_m",
+    "dist_to_start_m",
+    "dist_to_end_m",
+    "proj_t",
+    "arc_len_m",
+    "dist_rank",
+    "dist_diff_from_min_m",
+    "speed_mps",
+    "dt_s",
+    "accel_mps2",
+    "gps_gap_flag",
+    "bearing_diff_deg",
+    "cos_bearing_diff",
+    "is_fallback_cand",
+    "dist_ratio_to_min",
+    "dist_zscore",
+    "n_cand_within_15m",
+    "n_cand_within_30m",
+    "same_as_prev_nearest",
+    "same_as_next_nearest",
+    "connected_prev_nearest",
+    "connected_next_nearest",
+    "from_out_degree",
+    "to_out_degree",
+    "to_in_degree",
+    "has_reverse_arc",
+    "local_road_density"
+  ],
+  "match_class": 1,
+  "threshold": 0.5,
+  "software": {
+    "python": "3.14.7",
+    "numpy": "2.5.2",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.0",
+    "lightgbm": "4.7.0",
+    "xgboost": "3.4.1",
+    "optuna": "4.1.0",
+    "joblib": "1.5.3",
+    "pyarrow": "26.0.0",
+    "matplotlib": "3.11.1"
+  },
+  "exact_reload_verified": true
+}

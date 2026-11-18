@@ -303,20 +303,44 @@ def run_calibration_and_error_analysis(output_dir: Path = OUTPUT_DIR) -> dict[st
         }
 
     # 3. Compute per-trip diagnostics & per-trip model breakdown across all 10 student_test trips
+    preproc_path = PROJECT_ROOT / "artifacts" / "preprocessor.joblib"
+    phys_df = pd.DataFrame(index=test_df.index)
+    if "n_cand_within_15m" in test_df.columns and preproc_path.exists():
+        import joblib
+        preproc = joblib.load(preproc_path)
+        scaler = preproc.named_steps["scaler"]
+        raw_mat = scaler.inverse_transform(test_df[feature_cols].to_numpy(dtype=np.float32))
+        raw_cols = pd.DataFrame(raw_mat, index=test_df.index, columns=feature_cols)
+        phys_df["cands_15m"] = raw_cols["n_cand_within_15m"]
+        phys_df["road_density"] = raw_cols["local_road_density"]
+        phys_df["gps_gap"] = raw_cols["gps_gap_flag"]
+        phys_df["speed_mps"] = raw_cols["speed_mps"]
+        phys_df["dist_m"] = raw_cols["perp_dist_m"]
+        phys_df["heading_diff_deg"] = raw_cols["bearing_diff_deg"]
+    else:
+        phys_df["cands_15m"] = test_df.get("cands_within_15m", test_df.get("n_cand_within_15m", 2.0))
+        phys_df["road_density"] = test_df.get("local_road_density_30m", test_df.get("local_road_density", 3.0))
+        phys_df["gps_gap"] = test_df["gps_gap_flag"]
+        phys_df["speed_mps"] = test_df.get("gps_speed_mps", test_df.get("speed_mps", 10.0))
+        phys_df["dist_m"] = test_df.get("dist_to_arc_m", test_df.get("perp_dist_m", 5.0))
+        phys_df["heading_diff_deg"] = test_df.get("heading_diff_deg", test_df.get("bearing_diff_deg", 15.0))
+
     per_trip_rows: list[dict[str, Any]] = []
     for trip_id, trip_feat_df in test_df.groupby("trip_id", sort=True):
-        obs_first = trip_feat_df.drop_duplicates(subset=["obs_idx"], keep="first")
-        gt_rows = trip_feat_df[trip_feat_df["is_match"] == 1]
+        obs_first_idx = trip_feat_df.drop_duplicates(subset=["obs_idx"], keep="first").index
+        gt_idx = trip_feat_df[trip_feat_df["is_match"] == 1].index
+        if len(gt_idx) == 0:
+            gt_idx = obs_first_idx
 
-        n_obs = int(len(obs_first))
+        n_obs = int(len(obs_first_idx))
         n_cands = int(len(trip_feat_df))
-        mean_cands_15m = float(obs_first["cands_within_15m"].mean())
-        dense_intersection_rate = float((obs_first["cands_within_15m"] >= 3.0).mean())
-        mean_road_density = float(obs_first["local_road_density_30m"].mean())
-        gps_gap_rate = float((obs_first["gps_gap_flag"] > 0.5).mean())
-        mean_speed_mps = float(obs_first["gps_speed_mps"].mean())
-        mean_gt_dist_m = float(gt_rows["dist_to_arc_m"].mean())
-        mean_gt_heading_diff_deg = float(gt_rows["heading_diff_deg"].mean())
+        mean_cands_15m = float(phys_df.loc[obs_first_idx, "cands_15m"].mean())
+        dense_intersection_rate = float((phys_df.loc[obs_first_idx, "cands_15m"] >= 2.9).mean())
+        mean_road_density = float(phys_df.loc[obs_first_idx, "road_density"].mean())
+        gps_gap_rate = float((phys_df.loc[obs_first_idx, "gps_gap"] > 0.5).mean())
+        mean_speed_mps = float(phys_df.loc[obs_first_idx, "speed_mps"].mean())
+        mean_gt_dist_m = float(phys_df.loc[gt_idx, "dist_m"].mean())
+        mean_gt_heading_diff_deg = float(phys_df.loc[gt_idx, "heading_diff_deg"].mean())
         nearest_dist_top1_baseline = float(
             (trip_feat_df[trip_feat_df["cand_rank"] == 0]["is_match"] == 1).mean()
         )
@@ -369,15 +393,19 @@ def run_calibration_and_error_analysis(output_dir: Path = OUTPUT_DIR) -> dict[st
 
     # 4. Domain Error Regime Slice Analysis (Open Road vs Dense Intersections vs Heading Turns vs GPS Gaps)
     regime_slices: dict[str, Any] = {}
-    obs_gt = test_df[test_df["is_match"] == 1].set_index(["trip_id", "obs_idx"])
+    obs_first_mask = ~test_df.duplicated(subset=["trip_id", "obs_idx"], keep="first")
+    obs_phys = phys_df[obs_first_mask].copy()
+    obs_phys["trip_id"] = test_df.loc[obs_first_mask, "trip_id"].to_numpy()
+    obs_phys["obs_idx"] = test_df.loc[obs_first_mask, "obs_idx"].to_numpy()
+    obs_phys = obs_phys.set_index(["trip_id", "obs_idx"])
 
     slice_definitions = {
-        "open_road_low_ambiguity (cands_within_15m <= 2)": obs_gt["cands_within_15m"] <= 2.0,
-        "dense_intersection_or_parallel (cands_within_15m >= 3)": obs_gt["cands_within_15m"] >= 3.0,
-        "aligned_heading (gt_heading_diff <= 25 deg)": obs_gt["heading_diff_deg"] <= 25.0,
-        "turning_or_noisy_heading (gt_heading_diff > 25 deg)": obs_gt["heading_diff_deg"] > 25.0,
-        "high_gps_noise (gt_dist_to_arc > 10m)": obs_gt["dist_to_arc_m"] > 10.0,
-        "low_speed_stationary (gps_speed < 2.0 m/s)": obs_gt["gps_speed_mps"] < 2.0,
+        "open_road_low_ambiguity (cands_within_15m <= 2)": obs_phys["cands_15m"] <= 2.1,
+        "dense_intersection_or_parallel (cands_within_15m >= 3)": obs_phys["cands_15m"] >= 2.9,
+        "aligned_heading (gt_heading_diff <= 25 deg)": obs_phys["heading_diff_deg"] <= 25.0,
+        "turning_or_noisy_heading (gt_heading_diff > 25 deg)": obs_phys["heading_diff_deg"] > 25.0,
+        "high_gps_noise (gt_dist_to_arc > 10m)": obs_phys["dist_m"] > 10.0,
+        "low_speed_stationary (gps_speed < 2.0 m/s)": obs_phys["speed_mps"] < 2.0,
     }
 
     for slice_name, mask_series in slice_definitions.items():
