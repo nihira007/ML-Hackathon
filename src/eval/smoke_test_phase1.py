@@ -16,9 +16,19 @@ Run with:
 from __future__ import annotations
 
 import json
+import os
+import sys
 import tempfile
 from pathlib import Path
 from typing import List, Tuple
+
+# Ensure repository root is on sys.path
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+# Ensure writable matplotlib cache dir in sandboxed environments
+os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib_cache")
 
 import numpy as np
 import pandas as pd
