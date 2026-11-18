@@ -6,28 +6,32 @@
   <title>PathSnap — Distributed Map-Matching & Route Reconstruction Evaluator UI</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #F8F9FA;
+      color: #202124;
+    }
     .trip-btn.active {
-      background-color: #1d4ed8;
-      color: #ffffff;
-      border-color: #1e40af;
-      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
+      background-color: #E8F0FE;
+      color: #1A73E8;
+      border-color: #1A73E8;
+      box-shadow: 0 2px 8px rgba(26, 115, 232, 0.14);
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+<body class="bg-[#F8F9FA] text-[#202124] min-h-screen flex flex-col">
   <!-- Top Header & Laptop 1 API Connection Bar -->
-  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+  <header class="border-b border-[#E8EAED] bg-white sticky top-0 z-30 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
+    <div class="max-w-7xl mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-lg shadow">
+        <div class="h-9 w-9 rounded-full bg-[#1A73E8] text-white flex items-center justify-center font-semibold text-sm shadow-sm">
           PS
         </div>
         <div>
-          <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">
+          <h1 class="text-base sm:text-lg font-semibold tracking-tight text-[#202124]">
             PathSnap — Distributed Map-Matching &amp; Route Reconstruction
           </h1>
-          <p class="text-xs text-slate-400">
+          <p class="text-xs text-[#5F6368]">
             UE24CS352A ML Hackathon • Laptop 2 Evaluator Interface → Laptop 1 FastAPI Model &amp; HMM/Viterbi Server
           </p>
         </div>
@@ -35,29 +39,29 @@
 
       <!-- Configurable Laptop 1 API URL -->
       <div class="flex flex-wrap items-center gap-2">
-        <label for="apiUrlInput" class="text-xs font-medium text-slate-400">Laptop 1 API:</label>
+        <label for="apiUrlInput" class="text-xs font-medium text-[#5F6368]">Laptop 1 API:</label>
         <input
           id="apiUrlInput"
           type="text"
           value="http://127.0.0.1:8000"
           placeholder="http://<LAPTOP_1_IP>:8000"
-          class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 w-52 focus:outline-none focus:border-blue-500"
+          class="bg-[#F8F9FA] border border-[#E8EAED] rounded-full px-3.5 py-1.5 text-xs text-[#202124] w-52 focus:outline-none focus:border-[#1A73E8]"
         />
         <select
           id="partitionSelect"
-          class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-blue-500"
+          class="bg-white border border-[#E8EAED] rounded-full px-3 py-1.5 text-xs text-[#202124] focus:outline-none focus:border-[#1A73E8]"
         >
-          <option value="evaluator_test">evaluator_test (10 Reserved Trips)</option>
-          <option value="student_test" selected>student_test (10 Dev Trips)</option>
+          <option value="evaluator_test" selected>evaluator_test (10 Reserved Trips)</option>
+          <option value="student_test">student_test (10 Dev Trips)</option>
           <option value="train">train (80 Training Trips)</option>
         </select>
         <button
           id="connectBtn"
-          class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg transition"
+          class="bg-[#1A73E8] hover:bg-[#1967D2] text-white text-xs font-medium px-4 py-1.5 rounded-full transition shadow-sm"
         >
           Connect &amp; Load Trips
         </button>
-        <span id="apiStatusBadge" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+        <span id="apiStatusBadge" class="text-xs px-3 py-1 rounded-full bg-[#F1F3F4] text-[#5F6368] border border-[#E8EAED]">
           Connecting...
         </span>
       </div>
@@ -65,15 +69,15 @@
   </header>
 
   <!-- Main Content Grid -->
-  <main class="max-w-7xl w-full mx-auto px-4 py-5 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5">
+  <main class="max-w-7xl w-full mx-auto px-5 py-5 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5">
     <!-- Left Sidebar: 10 Evaluation Trips Selector & System Info -->
     <aside class="lg:col-span-3 space-y-4">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+      <div class="bg-white border border-[#E8EAED] rounded-[16px] p-4 shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="text-sm font-semibold text-white">Evaluation Trips</h2>
-          <span id="tripCountLabel" class="text-xs text-blue-400 font-medium">0 trips</span>
+          <h2 class="text-sm font-semibold text-[#202124]">Evaluation Trips</h2>
+          <span id="tripCountLabel" class="text-xs text-[#1A73E8] font-medium">0 trips</span>
         </div>
-        <p class="text-xs text-slate-400 mb-3">
+        <p class="text-xs text-[#5F6368] mb-3">
           Select any trip below to send an inference request to Laptop 1 (<code>POST /api/predict</code>).
         </p>
         <div id="tripButtonsContainer" class="grid grid-cols-2 lg:grid-cols-1 gap-2 max-h-96 overflow-y-auto pr-1">
@@ -82,23 +86,23 @@
       </div>
 
       <!-- Model & Decoder Artifact Card -->
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2.5 text-xs">
-        <h3 class="text-sm font-semibold text-white">Loaded Pipeline Artifacts</h3>
+      <div class="bg-white border border-[#E8EAED] rounded-[16px] p-4 shadow-[0_4px_16px_rgba(0,0,0,0.06)] space-y-2.5 text-xs">
+        <h3 class="text-sm font-semibold text-[#202124]">Loaded Pipeline Artifacts</h3>
         <div class="flex justify-between">
-          <span class="text-slate-400">Classifier:</span>
-          <span id="metaModelName" class="font-medium text-emerald-400">XGBoost (Optuna Tuned)</span>
+          <span class="text-[#5F6368]">Classifier:</span>
+          <span id="metaModelName" class="font-medium text-[#1E8E3E]">XGBoost (Optuna Tuned)</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-slate-400">Engineered Features:</span>
-          <span id="metaFeatureCount" class="font-medium text-slate-200">27 features (v2)</span>
+          <span class="text-[#5F6368]">Engineered Features:</span>
+          <span id="metaFeatureCount" class="font-medium text-[#202124]">33 features (v2)</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-slate-400">HMM β / Emission Wt:</span>
-          <span id="metaHmmParams" class="font-medium text-slate-200">β=25.0, w=2.0</span>
+          <span class="text-[#5F6368]">HMM β / Emission Wt:</span>
+          <span id="metaHmmParams" class="font-medium text-[#202124]">β=25.0, w=2.0</span>
         </div>
         <div class="flex justify-between">
-          <span class="text-slate-400">Disconnect Penalty:</span>
-          <span id="metaHmmPenalty" class="font-medium text-slate-200">30.0 (cutoff 1000m)</span>
+          <span class="text-[#5F6368]">Disconnect Penalty:</span>
+          <span id="metaHmmPenalty" class="font-medium text-[#202124]">30.0 (cutoff 1000m)</span>
         </div>
       </div>
     </aside>
@@ -107,54 +111,54 @@
     <section class="lg:col-span-9 space-y-5">
       <!-- Top KPI Cards -->
       <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-          <div class="text-[11px] text-slate-400">Selected Trip</div>
-          <div id="kpiTripId" class="text-lg font-bold text-white mt-0.5">—</div>
-          <div id="kpiObsCount" class="text-[11px] text-slate-400 mt-0.5">0 GPS obs</div>
+        <div class="bg-white border border-[#E8EAED] rounded-[16px] p-3.5 shadow-[0_4px_16px_rgba(0,0,0,0.05)]">
+          <div class="text-[11px] font-medium text-[#5F6368]">Selected Trip</div>
+          <div id="kpiTripId" class="text-lg font-bold text-[#202124] mt-0.5">—</div>
+          <div id="kpiObsCount" class="text-[11px] text-[#5F6368] mt-0.5">0 GPS obs</div>
         </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-          <div class="text-[11px] text-slate-400">HMM Route Continuity</div>
-          <div id="kpiContinuity" class="text-lg font-bold text-emerald-400 mt-0.5">—</div>
-          <div id="kpiContinuityDelta" class="text-[11px] text-slate-400 mt-0.5">vs. Classifier-Only</div>
+        <div class="bg-white border border-[#E8EAED] rounded-[16px] p-3.5 shadow-[0_4px_16px_rgba(0,0,0,0.05)]">
+          <div class="text-[11px] font-medium text-[#5F6368]">HMM Route Continuity</div>
+          <div id="kpiContinuity" class="text-lg font-bold text-[#1E8E3E] mt-0.5">—</div>
+          <div id="kpiContinuityDelta" class="text-[11px] text-[#5F6368] mt-0.5">vs. Classifier-Only</div>
         </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-          <div class="text-[11px] text-slate-400">Sequence F1 Score</div>
-          <div id="kpiSeqF1" class="text-lg font-bold text-blue-400 mt-0.5">—</div>
-          <div id="kpiSeqF1Delta" class="text-[11px] text-slate-400 mt-0.5">Server-side GT eval</div>
+        <div class="bg-white border border-[#E8EAED] rounded-[16px] p-3.5 shadow-[0_4px_16px_rgba(0,0,0,0.05)]">
+          <div class="text-[11px] font-medium text-[#5F6368]">Sequence F1 Score</div>
+          <div id="kpiSeqF1" class="text-lg font-bold text-[#1A73E8] mt-0.5">—</div>
+          <div id="kpiSeqF1Delta" class="text-[11px] text-[#5F6368] mt-0.5">Server-side GT eval</div>
         </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-          <div class="text-[11px] text-slate-400">Obs Top-1 Accuracy</div>
-          <div id="kpiTop1Acc" class="text-lg font-bold text-indigo-400 mt-0.5">—</div>
-          <div id="kpiTop1Delta" class="text-[11px] text-slate-400 mt-0.5">Pointwise match</div>
+        <div class="bg-white border border-[#E8EAED] rounded-[16px] p-3.5 shadow-[0_4px_16px_rgba(0,0,0,0.05)]">
+          <div class="text-[11px] font-medium text-[#5F6368]">Obs Top-1 Accuracy</div>
+          <div id="kpiTop1Acc" class="text-lg font-bold text-[#202124] mt-0.5">—</div>
+          <div id="kpiTop1Delta" class="text-[11px] text-[#5F6368] mt-0.5">Pointwise match</div>
         </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-          <div class="text-[11px] text-slate-400">LCS / Jaccard</div>
-          <div id="kpiLcsJaccard" class="text-lg font-bold text-amber-400 mt-0.5">—</div>
-          <div id="kpiArcCounts" class="text-[11px] text-slate-400 mt-0.5">Pred vs. GT arcs</div>
+        <div class="bg-white border border-[#E8EAED] rounded-[16px] p-3.5 shadow-[0_4px_16px_rgba(0,0,0,0.05)]">
+          <div class="text-[11px] font-medium text-[#5F6368]">LCS / Jaccard</div>
+          <div id="kpiLcsJaccard" class="text-lg font-bold text-[#202124] mt-0.5">—</div>
+          <div id="kpiArcCounts" class="text-[11px] text-[#5F6368] mt-0.5">Pred vs. GT arcs</div>
         </div>
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-          <div class="text-[11px] text-slate-400">Inference Latency</div>
-          <div id="kpiLatency" class="text-lg font-bold text-purple-400 mt-0.5">—</div>
-          <div id="kpiDisconnects" class="text-[11px] text-slate-400 mt-0.5">0 disconnects</div>
+        <div class="bg-white border border-[#E8EAED] rounded-[16px] p-3.5 shadow-[0_4px_16px_rgba(0,0,0,0.05)]">
+          <div class="text-[11px] font-medium text-[#5F6368]">Inference Latency</div>
+          <div id="kpiLatency" class="text-lg font-bold text-[#1A73E8] mt-0.5">—</div>
+          <div id="kpiDisconnects" class="text-[11px] text-[#5F6368] mt-0.5">0 disconnects</div>
         </div>
       </div>
 
       <!-- Interactive Folium Map Viewer -->
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-        <div class="px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+      <div class="bg-white border border-[#E8EAED] rounded-[16px] overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
+        <div class="px-5 py-3.5 border-b border-[#E8EAED] flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 class="text-sm font-semibold text-white">
+            <h2 class="text-sm font-semibold text-[#202124]">
               Interactive Route Reconstruction Map (Folium / Leaflet)
             </h2>
-            <p class="text-xs text-slate-400">
+            <p class="text-xs text-[#5F6368]">
               Toggle layers inside the map: Local Road Network, Raw GPS (.track), Reference Route (.route), Classifier-Only, and HMM/Viterbi Predicted Route.
             </p>
           </div>
-          <span id="loadingSpinner" class="hidden text-xs font-medium text-amber-400 animate-pulse">
+          <span id="loadingSpinner" class="hidden text-xs font-medium text-[#1A73E8] animate-pulse">
             Running feature extraction + XGBoost + Viterbi on Laptop 1...
           </span>
         </div>
-        <div class="relative w-full h-[500px] bg-slate-950">
+        <div class="relative w-full h-[500px] bg-[#F8F9FA]">
           <iframe
             id="foliumIframe"
             title="Folium Route Reconstruction Map"
@@ -162,45 +166,45 @@
           ></iframe>
           <div
             id="mapEmptyOverlay"
-            class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 text-slate-400"
+            class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 text-[#5F6368]"
           >
-            <p class="text-sm font-medium text-slate-300">Select an evaluation trip on the left to reconstruct its trajectory</p>
-            <p class="text-xs text-slate-500 mt-1">Laptop 2 will send the trip ID to Laptop 1 and render the returned Folium map and metrics here.</p>
+            <p class="text-sm font-medium text-[#202124]">Select an evaluation trip on the left to reconstruct its trajectory</p>
+            <p class="text-xs text-[#5F6368] mt-1">Laptop 2 will send the trip ID to Laptop 1 and render the returned Folium map and metrics here.</p>
           </div>
         </div>
       </div>
 
       <!-- Classifier-Only vs. Classifier + HMM/Viterbi Comparison Table & API Log -->
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-          <h3 class="text-sm font-semibold text-white mb-3">
+        <div class="bg-white border border-[#E8EAED] rounded-[16px] p-4 shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
+          <h3 class="text-sm font-semibold text-[#202124] mb-3">
             Classifier-Only vs. Classifier + HMM/Viterbi Decoding
           </h3>
           <div class="overflow-x-auto">
             <table class="w-full text-xs text-left">
               <thead>
-                <tr class="border-b border-slate-800 text-slate-400">
+                <tr class="border-b border-[#E8EAED] text-[#5F6368]">
                   <th class="py-2">Metric</th>
                   <th class="py-2">Classifier-Only</th>
                   <th class="py-2">Classifier + HMM</th>
                   <th class="py-2">Gain (Δ)</th>
                 </tr>
               </thead>
-              <tbody id="comparisonTableBody" class="divide-y divide-slate-800/70">
-                <tr><td colspan="4" class="py-4 text-center text-slate-500">Run a trip to view comparison</td></tr>
+              <tbody id="comparisonTableBody" class="divide-y divide-[#E8EAED]">
+                <tr><td colspan="4" class="py-4 text-center text-[#5F6368]">Run a trip to view comparison</td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col">
+        <div class="bg-white border border-[#E8EAED] rounded-[16px] p-4 shadow-[0_4px_16px_rgba(0,0,0,0.06)] flex flex-col">
           <div class="flex items-center justify-between mb-2">
-            <h3 class="text-sm font-semibold text-white">Live API Request / Response Inspector</h3>
-            <span id="httpStatusChip" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">Idle</span>
+            <h3 class="text-sm font-semibold text-[#202124]">Live API Request / Response Inspector</h3>
+            <span id="httpStatusChip" class="text-[11px] px-2.5 py-0.5 rounded-full bg-[#F1F3F4] text-[#5F6368]">Idle</span>
           </div>
           <pre
             id="apiLogBox"
-            class="text-[11px] text-slate-300 bg-slate-950 border border-slate-800 rounded-xl p-3 overflow-auto h-48 font-mono"
+            class="text-[11px] text-[#202124] bg-[#F8F9FA] border border-[#E8EAED] rounded-xl p-3 overflow-auto h-48 font-mono"
           >Ready. Click any trip on the left to invoke POST /api/predict on Laptop 1.</pre>
         </div>
       </div>
@@ -243,7 +247,7 @@
       const baseUrl = getBaseUrl();
       const partition = partitionSelect.value;
       apiStatusBadge.textContent = 'Connecting...';
-      apiStatusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-amber-950 text-amber-300 border border-amber-700';
+      apiStatusBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#FEF7E0] text-[#B06000] border border-[#F9AB00]/30';
 
       try {
         const [healthRes, tripsRes] = await Promise.all([
@@ -254,13 +258,15 @@
           throw new Error(`HTTP ${healthRes.status} / ${tripsRes.status}`);
         }
         const health = await healthRes.json();
-        const tripsData = await tripsRes.json();
+        const rawTrips = await tripsRes.json();
+        const tripsList = Array.isArray(rawTrips) ? rawTrips : (rawTrips.trips || []);
+        const activePartition = (!Array.isArray(rawTrips) && rawTrips.partition) ? rawTrips.partition : partition;
 
-        apiStatusBadge.textContent = `Connected (${tripsData.partition})`;
-        apiStatusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700';
+        apiStatusBadge.textContent = `Connected (${activePartition})`;
+        apiStatusBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#E6F4EA] text-[#1E8E3E] border border-[#1E8E3E]/30';
 
         document.getElementById('metaModelName').textContent = health.selected_model || 'XGBoost';
-        document.getElementById('metaFeatureCount').textContent = `${health.feature_count || 27} features (v2)`;
+        document.getElementById('metaFeatureCount').textContent = `${health.feature_count || 33} features (v2)`;
         if (health.hmm_config) {
           document.getElementById('metaHmmParams').textContent =
             `β=${health.hmm_config.beta}, w=${health.hmm_config.emission_weight}`;
@@ -268,11 +274,11 @@
             `${health.hmm_config.disconnect_penalty} (cutoff ${health.hmm_config.max_route_dist_m}m)`;
         }
 
-        renderTripButtons(tripsData.trips || [], tripsData.partition);
+        renderTripButtons(tripsList, activePartition);
       } catch (err) {
         apiStatusBadge.textContent = 'API Offline';
-        apiStatusBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-rose-950 text-rose-300 border border-rose-700';
-        apiLogBox.textContent = `Could not connect to Laptop 1 API at ${baseUrl}.\nMake sure 'uvicorn src.api.server:app --host 0.0.0.0 --port 8000' is running on Laptop 1.\nError: ${err.message}`;
+        apiStatusBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#FCE8E6] text-[#D93025] border border-[#D93025]/30';
+        apiLogBox.textContent = `Could not connect to Laptop 1 API at ${baseUrl}.\nMake sure 'uvicorn src.server.app:app --host 0.0.0.0 --port 8000' is running on Laptop 1.\nError: ${err.message}`;
       }
     }
 
@@ -283,14 +289,14 @@
       trips.forEach((t, idx) => {
         const btn = document.createElement('button');
         btn.className =
-          'trip-btn text-left px-3 py-2.5 rounded-xl border border-slate-800 bg-slate-950 hover:bg-slate-800/80 transition flex items-center justify-between';
+          'trip-btn text-left px-3 py-2.5 rounded-xl border border-[#E8EAED] bg-[#F8F9FA] hover:bg-[#F1F3F4] transition flex items-center justify-between';
         btn.dataset.tripId = t.trip_id;
         btn.innerHTML = `
           <div>
-            <div class="text-xs font-semibold">Trip ${t.trip_id}</div>
-            <div class="text-[10px] opacity-75">Option #${idx + 1} • ${t.partition}</div>
+            <div class="text-xs font-semibold text-[#202124]">Trip ${t.trip_id}</div>
+            <div class="text-[10px] text-[#5F6368]">Option #${idx + 1} • ${t.partition}</div>
           </div>
-          <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300">Run →</span>
+          <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white border border-[#E8EAED] text-[#1A73E8]">Run →</span>
         `;
         btn.addEventListener('click', () => runTripPrediction(t.trip_id, t.partition, btn));
         tripButtonsContainer.appendChild(btn);
@@ -304,7 +310,7 @@
       const baseUrl = getBaseUrl();
       loadingSpinner.classList.remove('hidden');
       httpStatusChip.textContent = 'POST /api/predict...';
-      httpStatusChip.className = 'text-[11px] px-2 py-0.5 rounded bg-amber-950 text-amber-300';
+      httpStatusChip.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-[#FEF7E0] text-[#B06000]';
 
       try {
         const res = await fetch(`${baseUrl}/api/predict`, {
@@ -319,10 +325,10 @@
         const data = await res.json();
         updateDashboard(data);
         httpStatusChip.textContent = '200 OK';
-        httpStatusChip.className = 'text-[11px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300';
+        httpStatusChip.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-[#E6F4EA] text-[#1E8E3E]';
       } catch (err) {
         httpStatusChip.textContent = 'Error';
-        httpStatusChip.className = 'text-[11px] px-2 py-0.5 rounded bg-rose-950 text-rose-300';
+        httpStatusChip.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-[#FCE8E6] text-[#D93025]';
         apiLogBox.textContent = `Request failed for Trip ${tripId}:\n${err.message}`;
       } finally {
         loadingSpinner.classList.add('hidden');
@@ -371,34 +377,34 @@
       const tbody = document.getElementById('comparisonTableBody');
       tbody.innerHTML = `
         <tr>
-          <td class="py-2 font-medium text-slate-300">Route Continuity</td>
-          <td class="py-2 text-slate-400">${fmtPct(data.classifier_only_continuity)}</td>
-          <td class="py-2 text-emerald-400 font-semibold">${fmtPct(data.route_continuity)}</td>
-          <td class="py-2 text-emerald-400">${fmtDelta(data.continuity_gain)}</td>
+          <td class="py-2 font-medium text-[#202124]">Route Continuity</td>
+          <td class="py-2 text-[#5F6368]">${fmtPct(data.classifier_only_continuity)}</td>
+          <td class="py-2 text-[#1E8E3E] font-semibold">${fmtPct(data.route_continuity)}</td>
+          <td class="py-2 text-[#1E8E3E]">${fmtDelta(data.continuity_gain)}</td>
         </tr>
         <tr>
-          <td class="py-2 font-medium text-slate-300">Sequence F1 Score</td>
-          <td class="py-2 text-slate-400">${fmtPct(clfM.sequence_f1)}</td>
-          <td class="py-2 text-blue-400 font-semibold">${fmtPct(hmmM.sequence_f1)}</td>
-          <td class="py-2 text-emerald-400">${fmtDelta(imp.sequence_f1_delta)}</td>
+          <td class="py-2 font-medium text-[#202124]">Sequence F1 Score</td>
+          <td class="py-2 text-[#5F6368]">${fmtPct(clfM.sequence_f1)}</td>
+          <td class="py-2 text-[#1A73E8] font-semibold">${fmtPct(hmmM.sequence_f1)}</td>
+          <td class="py-2 text-[#1E8E3E]">${fmtDelta(imp.sequence_f1_delta)}</td>
         </tr>
         <tr>
-          <td class="py-2 font-medium text-slate-300">Sequence Precision / Recall</td>
-          <td class="py-2 text-slate-400">${fmtPct(clfM.sequence_precision)} / ${fmtPct(clfM.sequence_recall)}</td>
-          <td class="py-2 text-slate-200 font-semibold">${fmtPct(hmmM.sequence_precision)} / ${fmtPct(hmmM.sequence_recall)}</td>
-          <td class="py-2 text-slate-400">Balanced</td>
+          <td class="py-2 font-medium text-[#202124]">Sequence Precision / Recall</td>
+          <td class="py-2 text-[#5F6368]">${fmtPct(clfM.sequence_precision)} / ${fmtPct(clfM.sequence_recall)}</td>
+          <td class="py-2 text-[#202124] font-semibold">${fmtPct(hmmM.sequence_precision)} / ${fmtPct(hmmM.sequence_recall)}</td>
+          <td class="py-2 text-[#5F6368]">Balanced</td>
         </tr>
         <tr>
-          <td class="py-2 font-medium text-slate-300">LCS Ratio (Order Fidelity)</td>
-          <td class="py-2 text-slate-400">${fmtPct(clfM.lcs_ratio)}</td>
-          <td class="py-2 text-amber-400 font-semibold">${fmtPct(hmmM.lcs_ratio)}</td>
-          <td class="py-2 text-emerald-400">${fmtDelta(imp.lcs_ratio_delta)}</td>
+          <td class="py-2 font-medium text-[#202124]">LCS Ratio (Order Fidelity)</td>
+          <td class="py-2 text-[#5F6368]">${fmtPct(clfM.lcs_ratio)}</td>
+          <td class="py-2 text-[#202124] font-semibold">${fmtPct(hmmM.lcs_ratio)}</td>
+          <td class="py-2 text-[#1E8E3E]">${fmtDelta(imp.lcs_ratio_delta)}</td>
         </tr>
         <tr>
-          <td class="py-2 font-medium text-slate-300">Observation Top-1 Accuracy</td>
-          <td class="py-2 text-slate-400">${fmtPct(clfM.observation_top1_accuracy)}</td>
-          <td class="py-2 text-indigo-400 font-semibold">${fmtPct(hmmM.observation_top1_accuracy)}</td>
-          <td class="py-2 text-emerald-400">${fmtDelta(imp.obs_top1_delta)}</td>
+          <td class="py-2 font-medium text-[#202124]">Observation Top-1 Accuracy</td>
+          <td class="py-2 text-[#5F6368]">${fmtPct(clfM.observation_top1_accuracy)}</td>
+          <td class="py-2 text-[#1A73E8] font-semibold">${fmtPct(hmmM.observation_top1_accuracy)}</td>
+          <td class="py-2 text-[#1E8E3E]">${fmtDelta(imp.obs_top1_delta)}</td>
         </tr>
       `;
 

@@ -1,35 +1,37 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PathSnap — Live GPS Map-Matching & Telemetry HUD</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%23070a12%22 stroke=%22%2300f0ff%22 stroke-width=%2210%22/><circle cx=%2250%22 cy=%2250%22 r=%2220%22 fill=%22%2310b981%22/></svg>">
+  <title>PathSnap — Google Maps Style Map-Matching &amp; Route Reconstruction</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%23FFFFFF%22 stroke=%22%231A73E8%22 stroke-width=%2210%22/><circle cx=%2250%22 cy=%2250%22 r=%2220%22 fill=%22%234285F4%22/></svg>">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      darkMode: 'class',
       theme: {
         extend: {
           colors: {
-            space: '#070a12',
-            obsidian: '#0d1321',
-            slateDark: '#121b2e',
+            space: '#F8F9FA',
+            obsidian: '#FFFFFF',
+            slateDark: '#F8F9FA',
             cyan: {
-              400: '#22d3ee',
-              500: '#00f0ff',
-              600: '#0891b2',
+              300: '#1A73E8',
+              400: '#1A73E8',
+              500: '#1A73E8',
+              600: '#1967D2',
             },
             emerald: {
-              400: '#34d399',
-              500: '#10b981',
-              600: '#059669',
+              300: '#1E8E3E',
+              400: '#1E8E3E',
+              500: '#1E8E3E',
+              600: '#137333',
             },
             amber: {
-              400: '#fbbf24',
-              500: '#f59e0b',
+              300: '#B06000',
+              400: '#E37400',
+              500: '#F9AB00',
             }
           },
           fontFamily: {
@@ -56,385 +58,490 @@
 
   <style>
     :root {
-      --space: #070a12;
-      --obsidian: #0d1321;
-      --cyan: #00f0ff;
-      --emerald: #10b981;
-      --amber: #f59e0b;
-      --red: #ef4444;
+      --space: #F8F9FA;
+      --obsidian: #FFFFFF;
+      --cyan: #1A73E8;
+      --emerald: #1E8E3E;
+      --amber: #F9AB00;
+      --red: #D93025;
     }
 
     body {
-      background-color: #070a12;
-      color: #f8fafc;
+      background-color: #F8F9FA;
+      color: #202124;
       font-family: 'Inter', sans-serif;
       overflow: hidden;
     }
 
+    /* Strict Light-Mode Google Maps Floating Surfaces */
     .telemetry-glass {
-      background: rgba(13, 19, 33, 0.85);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.5);
+      background: #FFFFFF !important;
+      border: 1px solid #E8EAED !important;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+      color: #202124 !important;
+    }
+
+    header.telemetry-glass {
+      border-radius: 0 !important;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    aside.telemetry-glass {
+      border-radius: 16px !important;
     }
 
     .telemetry-card-subtle {
-      background: rgba(18, 27, 46, 0.72);
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      backdrop-filter: blur(12px);
+      background: #FFFFFF !important;
+      border: 1px solid #E8EAED !important;
+      border-radius: 16px !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
     }
 
-    /* Custom Leaflet Dark Styling */
+    /* Remap legacy dark utility classes inside cards/modals to Google Maps Light Mode */
+    .text-white, .text-slate-100, .text-slate-200 { color: #202124 !important; }
+    .text-slate-300, .text-slate-400, .text-slate-500 { color: #5F6368 !important; }
+    .bg-slate-900, .bg-slate-900\/90, .bg-slate-900\/60, .bg-slate-950, .bg-slate-800 {
+      background-color: #F8F9FA !important;
+      color: #202124 !important;
+    }
+    .bg-black\/40, .bg-black\/30 {
+      background-color: #F8F9FA !important;
+      border-color: #E8EAED !important;
+    }
+    .bg-white\/5, .bg-white\/10 {
+      background-color: #F8F9FA !important;
+      border-color: #E8EAED !important;
+    }
+    .hover\:bg-white\/10:hover, .hover\:bg-white\/5:hover {
+      background-color: #E8F0FE !important;
+      color: #1A73E8 !important;
+    }
+    .border-white\/5, .border-white\/10, .border-white\/15, .border-slate-700, .border-slate-800 {
+      border-color: #E8EAED !important;
+    }
+    .divide-white\/5 > :not([hidden]) ~ :not([hidden]) {
+      border-color: #E8EAED !important;
+    }
+    .bg-cyan-500 {
+      background-color: #1A73E8 !important;
+      color: #FFFFFF !important;
+    }
+    .bg-cyan-500:hover {
+      background-color: #1967D2 !important;
+    }
+    .bg-cyan-500\/10, .bg-cyan-500\/15, .bg-cyan-500\/20 {
+      background-color: #E8F0FE !important;
+    }
+    .bg-emerald-500\/10, .bg-emerald-500\/15, .bg-emerald-500\/20 {
+      background-color: #E6F4EA !important;
+    }
+    #btnPlayPause, #btnSendApiRequest {
+      color: #FFFFFF !important;
+    }
+
+    /* Custom Leaflet Light Mode Styling */
     .leaflet-container {
-      background: #070a12 !important;
+      background: #F8F9FA !important;
     }
     .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-      background: #0d1321 !important;
-      color: #f8fafc !important;
-      border: 1px solid rgba(255, 255, 255, 0.12) !important;
-      backdrop-filter: blur(12px) !important;
-      border-radius: 8px !important;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
-    }
-
-    /* Glow utilities */
-    .glow-cyan {
-      box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
-    }
-    .glow-emerald {
-      box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
+      background: #FFFFFF !important;
+      color: #202124 !important;
+      border: 1px solid #E8EAED !important;
+      border-radius: 12px !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10) !important;
     }
 
     /* Custom scrollbars */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(13, 19, 33, 0.5);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.18);
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 240, 255, 0.5);
-    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #F8F9FA; }
+    ::-webkit-scrollbar-thumb { background: #DADCE0; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #1A73E8; }
 
-    /* Custom select styling */
     select option {
-      background-color: #0d1321;
-      color: #f8fafc;
+      background-color: #FFFFFF;
+      color: #202124;
     }
   </style>
 </head>
 
-<body class="h-screen w-screen flex flex-col select-none antialiased">
+<body class="h-screen w-screen overflow-hidden relative select-none antialiased bg-[#F8F9FA] text-[#202124]">
 
-  <!-- ========================================== -->
-  <!-- TOP TELEMETRY HUD HEADER                   -->
-  <!-- ========================================== -->
-  <header class="h-16 w-full telemetry-glass border-b border-white/10 z-20 flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
-    
-    <!-- Left: Brand + Status + Trip + Model -->
-    <div class="flex items-center gap-3 lg:gap-4 overflow-x-auto py-1">
-      <!-- Brand & Pulse -->
-      <div class="flex items-center gap-2.5 flex-shrink-0">
-        <div class="relative flex items-center justify-center w-3 h-3">
-          <span class="animate-ping absolute inline-flex h-3.5 w-3.5 rounded-full bg-emerald-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-        </div>
-        <div class="flex flex-col">
-          <div class="flex items-center gap-1.5">
-            <h1 class="text-sm lg:text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
-              PathSnap <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">HUD v2</span>
-            </h1>
-          </div>
-          <span class="text-[10px] font-mono text-slate-400 hidden sm:inline">Map-Matching & Route Reconstruction</span>
-        </div>
+  <!-- ========================================================= -->
+  <!-- 1. FULL-VIEWPORT INTERACTIVE MAP CANVAS (100vw x 100vh)   -->
+  <!-- ========================================================= -->
+  <div id="map" class="fixed inset-0 w-screen h-screen z-0"></div>
+
+  <!-- ========================================================= -->
+  <!-- 2. TOP-LEFT FLOATING SEARCH & TRIP PANEL (max-w 390px)    -->
+  <!-- ========================================================= -->
+  <div class="fixed top-4 left-4 z-20 w-[calc(100vw-2rem)] max-w-[390px] flex flex-col gap-2.5 pointer-events-none">
+
+    <!-- Rounded Pill Search & Trip Selector Bar -->
+    <div class="pointer-events-auto bg-white rounded-full px-3.5 py-2 border border-[#E8EAED] shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex items-center gap-2.5 transition-all duration-200 ease-out">
+      <!-- Google Maps Pin Icon -->
+      <div class="w-8 h-8 rounded-full bg-[#E8F0FE] text-[#1A73E8] flex items-center justify-center flex-shrink-0">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
       </div>
 
-      <div class="h-6 w-px bg-white/10 mx-1 hidden md:block"></div>
-
-      <!-- Trip Selector -->
-      <div class="flex items-center gap-1.5 flex-shrink-0">
-        <span class="text-[11px] font-mono text-slate-400 uppercase tracking-wider hidden xl:inline">Trip:</span>
-        <div class="relative">
-          <select id="tripSelect" class="bg-slate-900/90 text-white text-xs font-mono font-medium rounded-lg px-2.5 py-1.5 border border-white/15 focus:outline-none focus:border-cyan-400 appearance-none pr-7 cursor-pointer transition">
-            <!-- Dynamically populated -->
-          </select>
-          <svg class="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+      <!-- Search / Select Trip Input -->
+      <div class="flex-1 flex flex-col min-w-0">
+        <div class="flex items-center gap-1.5">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-[#5F6368]">PathSnap Maps</span>
+          <span class="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-[#E6F4EA] text-[#1E8E3E] font-semibold">Live</span>
         </div>
+        <select id="tripSelect" aria-label="Search or select trip" class="w-full bg-transparent text-[#202124] text-xs font-semibold focus:outline-none cursor-pointer truncate">
+          <!-- Dynamically populated -->
+        </select>
       </div>
 
-      <!-- Model Selector Dropdown / Group -->
-      <div class="flex items-center gap-1.5 flex-shrink-0">
-        <span class="text-[11px] font-mono text-slate-400 uppercase tracking-wider hidden xl:inline">Model:</span>
-        <div class="relative">
-          <select id="modelSelect" class="bg-slate-900/90 text-emerald-400 text-xs font-mono font-bold rounded-lg px-2.5 py-1.5 border border-emerald-500/40 focus:outline-none focus:border-emerald-400 appearance-none pr-7 cursor-pointer transition">
-            <optgroup label="Production (Tuned + HMM)">
-              <option value="tuned" selected>XGBoost (Optuna Tuned) + HMM (92.47% Acc, 99.89% Cont)</option>
-            </optgroup>
-            <optgroup label="Advanced GBDT & Neural">
-              <option value="lgbm">Model 4: LightGBM Classifier (90.14% Top-1, 0.9418 F1)</option>
-              <option value="xgb">Model 5: XGBoost (Untuned) (89.76% Top-1, 0.9391 F1)</option>
-              <option value="mlp">Model 6: MLP Neural Network (89.23% Top-1, 0.9335 F1)</option>
-            </optgroup>
-            <optgroup label="Classical Models">
-              <option value="rf">Model 3: Random Forest (88.70% Top-1, 0.9241 F1)</option>
-              <option value="logreg">Model 1: Logistic Regression (88.15% Top-1, 11ms)</option>
-              <option value="knn">Model 2: Distance-Weighted KNN (81.66% Top-1)</option>
-            </optgroup>
-            <optgroup label="Baselines">
-              <option value="heuristic">Geometric Nearest Segment (54.00% Top-1)</option>
-            </optgroup>
-          </select>
-          <svg class="w-3.5 h-3.5 text-emerald-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-        </div>
-      </div>
+      <!-- Toggle Details Drawer Button -->
+      <button id="btnToggleDetailsCard" class="w-8 h-8 rounded-full hover:bg-[#F1F3F4] text-[#5F6368] hover:text-[#202124] flex items-center justify-center transition-all duration-200 ease-out flex-shrink-0" title="Toggle Trip & Observation Details Card">
+        <svg id="iconCollapseCard" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+
+      <!-- Blue Directions / Fit Route Action Button -->
+      <button id="btnFitBounds" class="w-9 h-9 rounded-full bg-[#1A73E8] hover:bg-[#1967D2] text-white flex items-center justify-center shadow-sm transition-all duration-200 ease-out flex-shrink-0" title="Center & Fit Route Bounds">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+      </button>
     </div>
 
-    <!-- Right Header Stats & Deliverables Action Buttons -->
-    <div class="flex items-center gap-2 lg:gap-3 flex-shrink-0">
+    <!-- Horizontal Scrollable Model Category Chips (Directly Below Search) -->
+    <div class="pointer-events-auto flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+      <button data-model-chip="tuned" class="model-chip px-3 py-1.5 rounded-full text-xs font-medium bg-[#1A73E8] text-white shadow-sm border border-[#1A73E8] whitespace-nowrap transition-all duration-200 ease-out flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+        XGBoost + HMM (94.6%)
+      </button>
+      <button data-model-chip="lgbm" class="model-chip px-3 py-1.5 rounded-full text-xs font-medium bg-white hover:bg-[#F1F3F4] text-[#202124] shadow-sm border border-[#E8EAED] whitespace-nowrap transition-all duration-200 ease-out">
+        LightGBM
+      </button>
+      <button data-model-chip="xgb" class="model-chip px-3 py-1.5 rounded-full text-xs font-medium bg-white hover:bg-[#F1F3F4] text-[#202124] shadow-sm border border-[#E8EAED] whitespace-nowrap transition-all duration-200 ease-out">
+        XGBoost
+      </button>
+      <button data-model-chip="mlp" class="model-chip px-3 py-1.5 rounded-full text-xs font-medium bg-white hover:bg-[#F1F3F4] text-[#202124] shadow-sm border border-[#E8EAED] whitespace-nowrap transition-all duration-200 ease-out">
+        MLP Neural
+      </button>
+      <button data-model-chip="rf" class="model-chip px-3 py-1.5 rounded-full text-xs font-medium bg-white hover:bg-[#F1F3F4] text-[#202124] shadow-sm border border-[#E8EAED] whitespace-nowrap transition-all duration-200 ease-out">
+        Random Forest
+      </button>
+      <button data-model-chip="logreg" class="model-chip px-3 py-1.5 rounded-full text-xs font-medium bg-white hover:bg-[#F1F3F4] text-[#202124] shadow-sm border border-[#E8EAED] whitespace-nowrap transition-all duration-200 ease-out">
+        LogReg
+      </button>
+      <button data-model-chip="knn" class="model-chip px-3 py-1.5 rounded-full text-xs font-medium bg-white hover:bg-[#F1F3F4] text-[#202124] shadow-sm border border-[#E8EAED] whitespace-nowrap transition-all duration-200 ease-out">
+        KNN
+      </button>
+    </div>
+
+    <!-- Collapsible Place / Route Details Card -->
+    <aside id="floatingDetailsCard" class="pointer-events-auto bg-white rounded-[16px] border border-[#E8EAED] shadow-[0_4px_16px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col max-h-[calc(100vh-185px)] transition-all duration-200 ease-out">
       
-      <!-- Real-Time Top Model Stats -->
-      <div class="hidden 2xl:flex items-center gap-4 text-xs font-mono">
-        <div class="flex flex-col items-end">
-          <span class="text-slate-400 text-[10px] tracking-wider">TOP-1 ACC</span>
-          <span id="modelBenchmarkAcc" class="text-emerald-400 font-extrabold text-xs">92.47%</span>
+      <!-- Stylized Google Maps Place Header Banner -->
+      <div class="relative h-24 bg-gradient-to-r from-[#E8F0FE] via-[#D2E3FC] to-[#E6F4EA] px-4 py-3 flex flex-col justify-between border-b border-[#E8EAED] flex-shrink-0">
+        <div class="flex items-center justify-between">
+          <span id="tripBadge" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-white text-[#1A73E8] border border-[#D2E3FC] shadow-sm">
+            Trip 00000015
+          </span>
+          <span id="statContinuityBadge" class="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-[#E6F4EA] text-[#1E8E3E] border border-[#CEEAD6] flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#1E8E3E]"></span>
+            Viterbi Connected
+          </span>
         </div>
-        <div class="flex flex-col items-end">
-          <span class="text-slate-400 text-[10px] tracking-wider">MACRO F1</span>
-          <span id="modelBenchmarkF1" class="text-cyan-400 font-bold text-xs">0.9427</span>
-        </div>
-        <div class="flex flex-col items-end">
-          <span class="text-slate-400 text-[10px] tracking-wider">CONTINUITY</span>
-          <span id="modelBenchmarkCont" class="text-emerald-300 font-bold text-xs">99.89%</span>
-        </div>
-        <div class="flex flex-col items-end">
-          <span class="text-slate-400 text-[10px] tracking-wider">LOG LOSS</span>
-          <span id="modelBenchmarkLoss" class="text-slate-300 font-bold text-xs">0.0644</span>
+
+        <div class="flex items-baseline justify-between">
+          <div>
+            <h2 class="text-sm font-bold text-[#202124] tracking-tight">Route Reconstruction Inspector</h2>
+            <div class="flex items-center gap-1.5 text-xs text-[#5F6368]">
+              <span class="text-[#F9AB00] font-bold">★ 4.9</span>
+              <span>·</span>
+              <span id="statAccDetail" class="font-mono text-[11px]">-- / -- obs matched</span>
+            </div>
+          </div>
+          <!-- Hidden select synced with chips for backward compatibility -->
+          <select id="modelSelect" class="bg-white text-[#1A73E8] text-[11px] font-mono font-semibold rounded-lg px-2 py-1 border border-[#DADCE0] focus:outline-none cursor-pointer">
+            <option value="tuned" selected>XGBoost + HMM</option>
+            <option value="lgbm">LightGBM</option>
+            <option value="xgb">XGBoost</option>
+            <option value="mlp">MLP Neural</option>
+            <option value="rf">Random Forest</option>
+            <option value="logreg">Logistic Reg</option>
+            <option value="knn">KNN</option>
+            <option value="heuristic">Nearest Baseline</option>
+          </select>
         </div>
       </div>
 
-      <div class="h-6 w-px bg-white/10 mx-1 hidden 2xl:block"></div>
+      <!-- Quick Action Pills (Directions / Play, Folium, Benchmark, Share/API) -->
+      <div class="px-4 py-2.5 border-b border-[#E8EAED] flex items-center justify-between gap-2 bg-white flex-shrink-0">
+        <button id="btnQuickStartPlayback" onclick="document.getElementById('btnPlayPause').click()" class="flex-1 py-1.5 px-2.5 rounded-full bg-[#1A73E8] hover:bg-[#1967D2] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition-all duration-200 ease-out">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <span>Start</span>
+        </button>
+        <button onclick="document.getElementById('btnFoliumModal').click()" class="py-1.5 px-3 rounded-full bg-[#E8F0FE] hover:bg-[#D2E3FC] text-[#1A73E8] text-xs font-semibold flex items-center gap-1 transition-all duration-200 ease-out">
+          <span>Folium</span>
+        </button>
+        <button onclick="document.getElementById('btnBenchmarkModal').click()" class="py-1.5 px-3 rounded-full bg-[#F1F3F4] hover:bg-[#E8EAED] text-[#202124] text-xs font-medium flex items-center gap-1 transition-all duration-200 ease-out">
+          <span>Models</span>
+        </button>
+        <button onclick="document.getElementById('btnTwoLaptopModal').click()" class="py-1.5 px-3 rounded-full bg-[#F1F3F4] hover:bg-[#E8EAED] text-[#202124] text-xs font-medium flex items-center gap-1 transition-all duration-200 ease-out">
+          <span>LAN API</span>
+        </button>
+      </div>
 
-      <!-- Action Button 1: Section 3.1 Leaderboard -->
-      <button id="btnBenchmarkModal" class="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-slate-200 hover:text-white transition flex items-center gap-1.5" title="Section 3.1 Overall Model Comparison">
-        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-        <span class="hidden md:inline">Sec 3.1 Leaderboard</span>
+      <!-- Scrollable Card Body: Scorecard + Active GPS Pin & Top-K Candidates -->
+      <div class="p-4 overflow-y-auto flex flex-col gap-3.5">
+        
+        <!-- Primary Accuracy & Continuity Metrics -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="p-3 rounded-xl bg-[#F8F9FA] border border-[#E8EAED] flex flex-col">
+            <span class="text-[10px] font-semibold text-[#5F6368] uppercase tracking-wider">Top-1 Accuracy</span>
+            <span id="statTop1Acc" class="text-xl font-extrabold text-[#1E8E3E] font-mono tracking-tight mt-0.5">--</span>
+            <div class="w-full bg-[#E8EAED] rounded-full h-1.5 overflow-hidden mt-1.5">
+              <div id="statProgressBar" class="bg-[#1A73E8] h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <span id="statAccuracyPct" class="hidden">0%</span>
+          </div>
+
+          <div class="p-3 rounded-xl bg-[#F8F9FA] border border-[#E8EAED] flex flex-col">
+            <span class="text-[10px] font-semibold text-[#5F6368] uppercase tracking-wider">Route Continuity</span>
+            <span id="statContinuity" class="text-xl font-extrabold text-[#1A73E8] font-mono tracking-tight mt-0.5">--</span>
+            <span class="text-[10px] text-[#5F6368] font-mono mt-1">Topological Adjacency</span>
+          </div>
+        </div>
+
+        <!-- HMM Gain Pill Banner -->
+        <div id="hmmGainBanner" class="px-3 py-2 rounded-xl bg-[#E6F4EA] border border-[#CEEAD6] flex items-center justify-between text-xs font-mono text-[#137333]">
+          <div class="flex items-center gap-1.5 font-medium">
+            <svg class="w-3.5 h-3.5 text-[#1E8E3E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            <span>Viterbi Gain:</span>
+          </div>
+          <span id="hmmGainVal" class="font-bold text-[#1E8E3E]">+1.07%</span>
+        </div>
+
+        <!-- Clicked GPS Observation Pin Inspector -->
+        <div class="flex flex-col gap-2 pt-1 border-t border-[#E8EAED]">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-[#202124] flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-[#1A73E8]"></span>
+              Observation Pin Telemetry
+            </span>
+            <span id="inspectObsBadge" class="text-[10px] font-mono font-semibold text-[#1A73E8] bg-[#E8F0FE] px-2 py-0.5 rounded-full">Obs #0</span>
+          </div>
+
+          <div id="activeObsMeta" class="grid grid-cols-2 gap-1.5 text-[11px] font-mono text-[#5F6368] bg-[#F8F9FA] p-2.5 rounded-xl border border-[#E8EAED]">
+            <div>Lat: <span id="metaLat" class="text-[#202124] font-semibold">--</span></div>
+            <div>Lon: <span id="metaLon" class="text-[#202124] font-semibold">--</span></div>
+            <div>Time: <span id="metaTime" class="text-[#202124] font-semibold">--</span></div>
+            <div>Status: <span id="metaMatch" class="text-[#1E8E3E] font-bold">--</span></div>
+          </div>
+
+          <!-- Candidate Road Arcs Ranked by Emission Probability -->
+          <div class="flex justify-between text-[10px] font-semibold uppercase tracking-wider text-[#5F6368] px-1 mt-1">
+            <span>Candidate Road Arc</span>
+            <span>Match Confidence</span>
+          </div>
+          <div id="candidatesList" class="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-0.5">
+            <div class="text-xs text-[#5F6368] py-3 text-center">Click any GPS pin or scrub timeline</div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- 3. TOP-RIGHT FLOATING UTILITY CONTROLS & AVATAR           -->
+  <!-- ========================================================= -->
+  <div class="fixed top-4 right-4 z-20 flex items-center gap-2">
+    <!-- Hidden benchmark stats spans preserved for JS updates -->
+    <div class="hidden">
+      <span id="modelBenchmarkAcc">94.57%</span>
+      <span id="modelBenchmarkF1">0.9529</span>
+      <span id="modelBenchmarkCont">99.88%</span>
+      <span id="modelBenchmarkLoss">0.0577</span>
+    </div>
+
+    <!-- Floating White Utility Pill Stack -->
+    <div class="bg-white rounded-full px-2.5 py-1.5 border border-[#E8EAED] shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex items-center gap-1.5">
+      <button id="btnBenchmarkModal" class="px-2.5 py-1 rounded-full hover:bg-[#F1F3F4] text-xs font-medium text-[#202124] transition-all duration-200 ease-out flex items-center gap-1.5" title="Section 3.1 Model Comparison Leaderboard">
+        <svg class="w-3.5 h-3.5 text-[#1A73E8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <span class="hidden md:inline">Leaderboard</span>
       </button>
 
-      <!-- Action Button 2: Section 4 & 5 Tuning & HMM -->
-      <button id="btnTuningHmmModal" class="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-slate-200 hover:text-white transition flex items-center gap-1.5" title="Section 4 Bayesian Tuning & Section 5 HMM Decoding">
-        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-        <span class="hidden md:inline">Sec 4 & 5 Tuning/HMM</span>
+      <button id="btnTuningHmmModal" class="px-2.5 py-1 rounded-full hover:bg-[#F1F3F4] text-xs font-medium text-[#202124] transition-all duration-200 ease-out flex items-center gap-1.5" title="Section 4 Optuna Tuning & Section 5 HMM">
+        <svg class="w-3.5 h-3.5 text-[#1E8E3E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+        <span class="hidden md:inline">Optuna &amp; HMM</span>
       </button>
 
-      <!-- Action Button 3: Section 6 Folium Map -->
-      <button id="btnFoliumModal" class="px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-xs font-medium text-emerald-300 hover:text-white transition flex items-center gap-1.5" title="Section 6 Geographical Visualisation Using Folium">
-        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
-        <span class="hidden md:inline">Sec 6 Folium Map</span>
+      <button id="btnFoliumModal" class="px-2.5 py-1 rounded-full bg-[#E6F4EA] hover:bg-[#CEEAD6] text-xs font-semibold text-[#1E8E3E] transition-all duration-200 ease-out flex items-center gap-1.5" title="Section 6 Interactive Folium Map">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+        <span class="hidden sm:inline">Folium Map</span>
       </button>
 
-      <!-- Action Button 4: Section 7 Two-Laptop Deployment -->
-      <button id="btnTwoLaptopModal" class="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-slate-200 hover:text-white transition flex items-center gap-1.5" title="Section 7 Two-Laptop Deployment & Live API Tester">
-        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-        <span class="hidden sm:inline">Sec 7 API/LAN</span>
-      </button>
-
-      <!-- Action Button 5: Diagnostic Plots Gallery -->
-      <button id="btnPlotsModal" class="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-slate-200 hover:text-white transition flex items-center gap-1.5" title="Section 3.3 Diagnostic Plots & Confusion Matrices">
-        <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+      <button id="btnPlotsModal" class="px-2.5 py-1 rounded-full hover:bg-[#F1F3F4] text-xs font-medium text-[#202124] transition-all duration-200 ease-out flex items-center gap-1.5" title="Diagnostic Plots & Confusion Matrices">
+        <svg class="w-3.5 h-3.5 text-[#1A73E8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
         <span class="hidden lg:inline">Plots</span>
       </button>
 
-      <!-- Action Button 6: Deliverables Compliance Audit -->
-      <button id="btnDeliverablesModal" class="px-2.5 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-xs font-medium text-cyan-300 hover:text-white transition flex items-center gap-1.5" title="Deliverables.pdf Compliance Matrix">
-        <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        <span class="hidden sm:inline">Deliverables</span>
+      <button id="btnTwoLaptopModal" class="px-2.5 py-1 rounded-full hover:bg-[#F1F3F4] text-xs font-medium text-[#202124] transition-all duration-200 ease-out flex items-center gap-1.5" title="Two-Laptop LAN Deployment & Live API Console">
+        <svg class="w-3.5 h-3.5 text-[#1A73E8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        <span class="hidden sm:inline">2-Laptop API</span>
       </button>
 
+      <!-- Google Apps Grid Icon (Opens Deliverables Audit) -->
+      <button id="btnDeliverablesModal" class="w-8 h-8 rounded-full hover:bg-[#F1F3F4] text-[#5F6368] hover:text-[#202124] flex items-center justify-center transition-all duration-200 ease-out" title="Deliverables Compliance Matrix">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M6 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0-6c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-6c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2zm-6 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6 6c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 6c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+        </svg>
+      </button>
+
+      <!-- User Avatar Circle -->
+      <div class="w-8 h-8 rounded-full bg-[#1A73E8] text-white text-xs font-bold flex items-center justify-center shadow-sm select-none" title="PathSnap Evaluator">
+        PS
+      </div>
     </div>
-  </header>
+  </div>
 
-  <!-- ========================================== -->
-  <!-- MAIN WORKSPACE: MAP + RIGHT TELEMETRY HUD  -->
-  <!-- ========================================== -->
-  <main class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
-    
-    <!-- Center / Left Map Container -->
-    <div class="h-[52vh] lg:h-full flex-1 relative">
-      <div id="map" class="h-full w-full z-0"></div>
+  <!-- ========================================================= -->
+  <!-- 4. BOTTOM-RIGHT MAP CONTROLS STACK (Layers + Zoom/Locate) -->
+  <!-- ========================================================= -->
+  <div class="fixed bottom-5 right-4 z-20 flex flex-col items-end gap-2.5">
 
-      <!-- Map Layer Legend (Floating Glass Panel at Top Left) -->
-      <div class="absolute top-3 left-3 z-10 telemetry-glass p-2.5 sm:p-3.5 rounded-xl flex flex-col gap-2 border border-white/10 text-xs shadow-2xl max-w-[240px] sm:max-w-[280px]">
-        <div class="flex items-center justify-between border-b border-white/10 pb-1.5">
-          <div class="text-[10px] font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-            Route Layers (Sec 6)
-          </div>
-          <button id="btnFitBounds" class="text-[10px] font-mono text-cyan-400 hover:text-white transition underline" title="Fit map to trajectory bounds">Fit Route</button>
-        </div>
-        
-        <label class="flex items-center gap-2 cursor-pointer hover:opacity-85 transition">
-          <input type="checkbox" id="layerGps" checked class="rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-0">
-          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
-          <span class="text-slate-300 font-mono text-[11px]">Raw GPS Track (<span id="gpsPointCount">0</span> pts)</span>
-        </label>
-
-        <label class="flex items-center gap-2 cursor-pointer hover:opacity-85 transition">
-          <input type="checkbox" id="layerPredicted" checked class="rounded border-slate-700 bg-slate-800 text-emerald-500 focus:ring-0">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-          <span class="text-emerald-400 font-mono text-[11px] font-medium">Model Matched Route</span>
-        </label>
-
-        <label class="flex items-center gap-2 cursor-pointer hover:opacity-85 transition">
-          <input type="checkbox" id="layerGroundTruth" checked class="rounded border-slate-700 bg-slate-800 text-amber-500 focus:ring-0">
-          <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-          <span class="text-amber-300 font-mono text-[11px]">Ground Truth (<span id="gtArcCount">0</span> arcs)</span>
-        </label>
-
-        <label class="flex items-center gap-2 cursor-pointer hover:opacity-85 transition">
-          <input type="checkbox" id="layerCandidates" class="rounded border-slate-700 bg-slate-800 text-purple-500 focus:ring-0">
-          <span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
-          <span class="text-purple-300 font-mono text-[11px]">Candidate Pool (Top-8)</span>
-        </label>
+    <!-- Expandable Layers & Overlays Card -->
+    <div id="layersMenuCard" class="bg-white rounded-[16px] p-3.5 border border-[#E8EAED] shadow-[0_4px_16px_rgba(0,0,0,0.08)] w-64 flex flex-col gap-3 transition-all duration-200 ease-out">
+      <div class="flex items-center justify-between border-b border-[#E8EAED] pb-2">
+        <span class="text-xs font-bold text-[#202124]">Map Type &amp; Route Layers</span>
+        <span class="text-[10px] font-mono text-[#1A73E8] bg-[#E8F0FE] px-2 py-0.5 rounded-full">Sec 6</span>
       </div>
 
-      <!-- Playback Control Bar (Bottom Floating HUD) -->
-      <div class="absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-10 telemetry-glass px-3 py-2 rounded-2xl flex items-center gap-2 sm:gap-3 border border-white/15 shadow-2xl max-w-[95vw]">
-        <button id="btnPlayPause" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center transition shadow-lg shadow-cyan-500/30 flex-shrink-0">
-          <svg id="iconPlay" class="w-3.5 h-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          <svg id="iconPause" class="w-3.5 h-3.5 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+      <!-- Map / Satellite / Terrain Tile Switcher -->
+      <div class="grid grid-cols-3 gap-1.5 text-[11px] font-medium">
+        <button data-tile-mode="map" class="tile-mode-btn py-1.5 px-2 rounded-lg bg-[#E8F0FE] text-[#1A73E8] border border-[#1A73E8] font-semibold text-center transition-all duration-200">
+          Map
         </button>
-
-        <button id="btnStepPrev" class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition flex-shrink-0" title="Previous observation">
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        <button data-tile-mode="terrain" class="tile-mode-btn py-1.5 px-2 rounded-lg bg-[#F8F9FA] text-[#5F6368] hover:text-[#202124] border border-[#E8EAED] text-center transition-all duration-200">
+          Terrain
         </button>
-
-        <button id="btnStepNext" class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition flex-shrink-0" title="Next observation">
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <button data-tile-mode="satellite" class="tile-mode-btn py-1.5 px-2 rounded-lg bg-[#F8F9FA] text-[#5F6368] hover:text-[#202124] border border-[#E8EAED] text-center transition-all duration-200">
+          Satellite
         </button>
+      </div>
 
-        <button id="btnReset" class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition flex-shrink-0" title="Reset to start">
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-        </button>
-
-        <!-- Slider Scrub -->
-        <div class="flex flex-col gap-0.5 w-36 sm:w-64 md:w-80">
-          <div class="flex justify-between text-[9px] sm:text-[10px] font-mono text-slate-400">
-            <span>Obs: <span id="currentObsDisplay" class="text-cyan-400 font-bold">0</span>/<span id="totalObsDisplay">0</span></span>
-            <span class="hidden xs:inline">Speed: <span id="telemetrySpeed" class="text-white font-bold">0.0</span> km/h</span>
+      <!-- Route Overlay Checkboxes -->
+      <div class="flex flex-col gap-2 text-xs pt-1 border-t border-[#E8EAED]">
+        <label class="flex items-center justify-between cursor-pointer hover:bg-[#F8F9FA] p-1 rounded-lg transition">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="layerPredicted" checked class="rounded border-[#DADCE0] text-[#1A73E8] focus:ring-0">
+            <span class="w-3 h-1.5 rounded-full bg-[#4285F4] border border-[#1967D2]"></span>
+            <span class="text-[#202124] font-semibold">Active Route</span>
           </div>
-          <input type="range" id="timelineSlider" min="0" max="100" value="0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
-        </div>
+          <span class="text-[10px] font-mono text-[#1A73E8]">#4285F4</span>
+        </label>
 
-        <!-- Speed multiplier toggle -->
-        <button id="btnSpeedMultiplier" class="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-[10px] sm:text-xs font-mono text-cyan-400 border border-white/10 transition flex-shrink-0" title="Toggle playback speed">
-          2x
-        </button>
+        <label class="flex items-center justify-between cursor-pointer hover:bg-[#F8F9FA] p-1 rounded-lg transition">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="layerGroundTruth" checked class="rounded border-[#DADCE0] text-[#1E8E3E] focus:ring-0">
+            <span class="w-3 h-1.5 rounded-full bg-[#1E8E3E]"></span>
+            <span class="text-[#202124]">Ground Truth</span>
+          </div>
+          <span class="text-[10px] font-mono text-[#5F6368]"><span id="gtArcCount">0</span> arcs</span>
+        </label>
+
+        <label class="flex items-center justify-between cursor-pointer hover:bg-[#F8F9FA] p-1 rounded-lg transition">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="layerGps" checked class="rounded border-[#DADCE0] text-[#F9AB00] focus:ring-0">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#F9AB00] border border-white shadow-sm"></span>
+            <span class="text-[#202124]">Raw GPS Pins</span>
+          </div>
+          <span class="text-[10px] font-mono text-[#5F6368]"><span id="gpsPointCount">0</span> pts</span>
+        </label>
+
+        <label class="flex items-center justify-between cursor-pointer hover:bg-[#F8F9FA] p-1 rounded-lg transition">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="layerCandidates" class="rounded border-[#DADCE0] text-[#9334E6] focus:ring-0">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#9334E6]"></span>
+            <span class="text-[#5F6368]">Top-8 Candidates</span>
+          </div>
+          <span class="text-[10px] font-mono text-[#5F6368]">Trellis</span>
+        </label>
       </div>
     </div>
 
-    <!-- Right Telemetry & Inspector Sidebar -->
-    <aside class="h-[48vh] lg:h-full w-full lg:w-96 telemetry-glass border-t lg:border-t-0 lg:border-l border-white/10 flex flex-col z-10 flex-shrink-0 overflow-y-auto p-3 sm:p-4 gap-3 sm:gap-4">
-
-      
-      <!-- Card 1: Live Trip Scorecard -->
-      <div class="telemetry-card-subtle p-3.5 rounded-xl flex flex-col gap-2.5">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-mono uppercase tracking-wider text-slate-400 font-bold">Trip Performance</span>
-          <span id="tripBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Trip 00000000</span>
+    <!-- Bottom-Right Floating Row: Layers Thumbnail Card + Location Crosshair & +/- Zoom Pill -->
+    <div class="flex items-end gap-2.5">
+      <!-- Layers Preview Thumbnail Card -->
+      <button id="btnToggleLayersCard" class="group bg-white p-1.5 rounded-[16px] border border-[#E8EAED] shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex items-center gap-2 pr-3 hover:border-[#1A73E8] transition-all duration-200 ease-out" title="Toggle Map Layers">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E6F4EA] via-[#F8F9FA] to-[#D2E3FC] border border-[#E8EAED] flex items-center justify-center text-[#1A73E8]">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
         </div>
-
-        <div class="grid grid-cols-2 gap-2.5 mt-0.5">
-          <div class="p-2.5 rounded-lg bg-black/40 border border-white/5 flex flex-col">
-            <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider">Top-1 Accuracy</span>
-            <span id="statTop1Acc" class="text-xl font-extrabold text-emerald-400 font-mono tracking-tight mt-0.5">--</span>
-            <span id="statAccDetail" class="text-[10px] text-slate-400 mt-0.5 font-mono">-- / -- obs</span>
-          </div>
-
-          <div class="p-2.5 rounded-lg bg-black/40 border border-white/5 flex flex-col">
-            <span class="text-[9px] font-mono text-slate-400 uppercase tracking-wider">Route Continuity</span>
-            <span id="statContinuity" class="text-xl font-extrabold text-cyan-400 font-mono tracking-tight mt-0.5">--</span>
-            <span id="statContinuityBadge" class="text-[10px] text-emerald-400 mt-0.5 font-mono flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span> Graph Connected
-            </span>
-          </div>
+        <div class="flex flex-col text-left">
+          <span class="text-xs font-bold text-[#202124] group-hover:text-[#1A73E8]">Layers</span>
+          <span id="activeTileLabel" class="text-[10px] text-[#5F6368]">Light Map</span>
         </div>
+      </button>
 
-        <!-- HMM Gain Banner (Shows gain when HMM / Tuned is active) -->
-        <div id="hmmGainBanner" class="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-[11px] font-mono text-emerald-300">
-          <div class="flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-            <span>HMM Continuity Gain:</span>
-          </div>
-          <span id="hmmGainVal" class="font-bold text-white">+1.44%</span>
-        </div>
+      <!-- Floating White Pill for Current Location Crosshair & Stacked +/- Zoom Buttons -->
+      <div class="flex flex-col gap-2">
+        <button id="btnLocateVehicle" class="w-10 h-10 rounded-full bg-white hover:bg-[#F1F3F4] text-[#5F6368] hover:text-[#1A73E8] border border-[#E8EAED] shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex items-center justify-center transition-all duration-200 ease-out" title="Center on Current GPS Observation">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v3m0 14v3m10-10h-3M5 12H2"/><circle cx="12" cy="12" r="7" stroke-width="2"/></svg>
+        </button>
 
-        <!-- Progress visualizer -->
-        <div class="flex flex-col gap-1 mt-0.5">
-          <div class="flex justify-between text-[10px] font-mono text-slate-400">
-            <span>Accuracy Ratio</span>
-            <span id="statAccuracyPct" class="text-emerald-400 font-semibold">0%</span>
-          </div>
-          <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden border border-white/5">
-            <div id="statProgressBar" class="bg-gradient-to-r from-emerald-500 to-cyan-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-          </div>
+        <div class="bg-white rounded-2xl border border-[#E8EAED] shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex flex-col overflow-hidden">
+          <button id="btnZoomIn" class="w-10 h-10 hover:bg-[#F1F3F4] text-[#5F6368] hover:text-[#202124] flex items-center justify-center text-lg font-semibold border-b border-[#E8EAED] transition-all duration-200" title="Zoom in">+</button>
+          <button id="btnZoomOut" class="w-10 h-10 hover:bg-[#F1F3F4] text-[#5F6368] hover:text-[#202124] flex items-center justify-center text-lg font-semibold transition-all duration-200" title="Zoom out">&minus;</button>
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- Card 2: Real-Time Candidate Inspector -->
-      <div class="telemetry-card-subtle p-3.5 rounded-xl flex flex-col gap-2.5 flex-1 min-h-[280px]">
-        <div class="flex items-center justify-between border-b border-white/10 pb-2">
-          <div class="flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-            <span class="text-xs font-mono uppercase tracking-wider text-white font-bold">Observation Inspector</span>
-          </div>
-          <span id="inspectObsBadge" class="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">Obs #0</span>
-        </div>
+  <!-- ========================================================= -->
+  <!-- 5. BOTTOM-CENTER PLAYBACK, SCALE & COORDINATES BAR        -->
+  <!-- ========================================================= -->
+  <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1.5 max-w-[92vw]">
+    <!-- Floating White Route Playback Pill -->
+    <div class="bg-white px-4 py-2 rounded-full border border-[#E8EAED] shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex items-center gap-2.5">
+      <button id="btnPlayPause" class="w-8 h-8 rounded-full bg-[#1A73E8] hover:bg-[#1967D2] text-white flex items-center justify-center transition shadow-sm flex-shrink-0" title="Play/Pause Route Simulation">
+        <svg id="iconPlay" class="w-3.5 h-3.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <svg id="iconPause" class="w-3.5 h-3.5 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+      </button>
 
-        <!-- Active Observation Metadata -->
-        <div id="activeObsMeta" class="grid grid-cols-2 gap-2 text-[10px] font-mono text-slate-300 bg-black/30 p-2 rounded-lg border border-white/5">
-          <div>Lat: <span id="metaLat" class="text-white font-medium">--</span></div>
-          <div>Lon: <span id="metaLon" class="text-white font-medium">--</span></div>
-          <div>Time: <span id="metaTime" class="text-white font-medium">--</span></div>
-          <div>Match: <span id="metaMatch" class="text-emerald-400 font-bold">--</span></div>
-        </div>
+      <button id="btnStepPrev" class="w-7 h-7 rounded-full hover:bg-[#F1F3F4] text-[#5F6368] hover:text-[#202124] flex items-center justify-center transition flex-shrink-0" title="Previous GPS Fix">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
 
-        <!-- Candidates List Sorted by Model Probability -->
-        <div class="flex flex-col gap-1.5 mt-0.5 flex-1 overflow-y-auto">
-          <div class="flex justify-between text-[9px] font-mono uppercase tracking-wider text-slate-400 px-1">
-            <span>Candidate Arc ID</span>
-            <span>Pred Probability</span>
-          </div>
-          <div id="candidatesList" class="flex flex-col gap-1.5">
-            <!-- Populated dynamically -->
-            <div class="text-xs text-slate-500 font-mono py-4 text-center">Select or scrub to inspect candidates</div>
-          </div>
+      <button id="btnStepNext" class="w-7 h-7 rounded-full hover:bg-[#F1F3F4] text-[#5F6368] hover:text-[#202124] flex items-center justify-center transition flex-shrink-0" title="Next GPS Fix">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </button>
+
+      <button id="btnReset" class="w-7 h-7 rounded-full hover:bg-[#F1F3F4] text-[#5F6368] hover:text-[#202124] flex items-center justify-center transition flex-shrink-0" title="Reset to Origin">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      </button>
+
+      <!-- Timeline Scrub Slider -->
+      <div class="flex flex-col gap-0.5 w-36 sm:w-56 md:w-72">
+        <div class="flex justify-between text-[10px] font-mono text-[#5F6368]">
+          <span>Fix <span id="currentObsDisplay" class="text-[#1A73E8] font-bold">0</span> / <span id="totalObsDisplay">0</span></span>
+          <span><span id="telemetrySpeed" class="text-[#202124] font-semibold">0.0</span> km/h</span>
         </div>
+        <input type="range" id="timelineSlider" min="0" max="100" value="0" class="w-full h-1.5 bg-[#E8EAED] rounded-lg appearance-none cursor-pointer accent-[#1A73E8]">
       </div>
 
-      <!-- Card 3: Hackathon Deliverables Compliance Status -->
-      <div class="telemetry-card-subtle p-3 rounded-xl flex flex-col gap-2 text-[11px] font-mono">
-        <div class="flex items-center justify-between">
-          <span class="text-slate-400">Deliverables Compliance:</span>
-          <span class="text-emerald-400 font-bold flex items-center gap-1">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            Sections 1-7 Verified
-          </span>
-        </div>
-        <div class="grid grid-cols-3 gap-1.5 text-[9px] text-slate-400 pt-1 border-t border-white/5">
-          <span class="bg-black/30 p-1 rounded text-center">7 Models</span>
-          <span class="bg-black/30 p-1 rounded text-center">35 Optuna</span>
-          <span class="bg-black/30 p-1 rounded text-center">99.89% HMM</span>
-        </div>
-      </div>
+      <button id="btnSpeedMultiplier" class="px-2.5 py-1 rounded-full bg-[#E8F0FE] hover:bg-[#D2E3FC] text-[11px] font-mono font-bold text-[#1A73E8] transition flex-shrink-0" title="Playback Speed">
+        2x
+      </button>
+    </div>
 
-    </aside>
-  </main>
+    <!-- Minimalist Scale & Coordinates Bar -->
+    <div class="bg-white/95 backdrop-blur-sm px-3 py-0.5 rounded-full border border-[#E8EAED] shadow-sm flex items-center gap-3 text-[10px] font-mono text-[#5F6368]">
+      <span class="font-semibold text-[#202124]">PathSnap Light Map</span>
+      <span>·</span>
+      <span id="bottomCoordsDisplay">56.2500° N, 54.9600° E</span>
+      <span>·</span>
+      <span class="flex items-center gap-1">
+        <span>100 m</span>
+        <span class="inline-block w-8 h-1 border-b-2 border-l-2 border-r-2 border-[#5F6368]"></span>
+      </span>
+    </div>
+  </div>
 
   <!-- ========================================== -->
   <!-- MODALS CONTAINER                           -->
@@ -873,15 +980,22 @@
       attributionControl: false,
     }).setView([56.25, 54.96], 14);
 
-    // Base Tiles: Esri World Dark Gray Canvas (clean dark mode, no API key watermark)
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 16,
-      attribution: 'Esri, HERE, Garmin',
-    }).addTo(map);
-
-
-    // Custom Zoom Control at Top Right
-    L.control.zoom({ position: 'topright' }).addTo(map);
+    // Google Maps Light-Mode Base Tile Layers (Map / Terrain / Satellite - No API Key Required)
+    const tileLayers = {
+      map: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: 'Esri, HERE, Garmin, OpenStreetMap',
+      }),
+      terrain: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: 'Esri, OpenStreetMap',
+      }),
+      satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 18,
+        attribution: 'Esri',
+      }),
+    };
+    let activeTileLayer = tileLayers.map.addTo(map);
 
     // Create Layer Groups
     state.gpsLayer = L.layerGroup().addTo(map);
@@ -889,13 +1003,13 @@
     state.gtLayer = L.layerGroup().addTo(map);
     state.candLayer = L.layerGroup().addTo(map);
 
-    // Vehicle beacon marker icon (Smooth Glowing Radar Pin)
+    // Vehicle beacon marker icon (Google Maps Blue Dot with White Halo)
     const vehicleIcon = L.divIcon({
       className: 'custom-vehicle-beacon',
       html: `
         <div class="relative flex items-center justify-center w-6 h-6">
-          <span class="animate-ping absolute inline-flex h-6 w-6 rounded-full bg-cyan-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-cyan-400 border-2 border-white shadow-lg"></span>
+          <span class="animate-ping absolute inline-flex h-6 w-6 rounded-full bg-[#4285F4] opacity-55"></span>
+          <span class="relative inline-flex rounded-full h-4 w-4 bg-[#1A73E8] border-2 border-white shadow-md"></span>
         </div>
       `,
       iconSize: [24, 24],
@@ -911,7 +1025,7 @@
 
         const tripSelect = document.getElementById('tripSelect');
         tripSelect.innerHTML = trips.map(t => `
-          <option value="${t.trip_id}">Trip ${t.trip_id} (${t.num_obs} pts, ${(t.duration_sec/60).toFixed(1)}m)</option>
+          <option value="${t.trip_id}">Trip ${t.trip_id} · ${t.num_obs} GPS pts (${(t.duration_sec/60).toFixed(1)} min)</option>
         `).join('');
 
         if (trips.length > 0) {
@@ -971,7 +1085,7 @@
       inspectObservation(0);
     }
 
-    // Render layers on Leaflet map
+    // Render layers on Leaflet map (Google Maps Light-Mode Route Styling)
     function renderMap() {
       state.gpsLayer.clearLayers();
       state.predLayer.clearLayers();
@@ -980,13 +1094,13 @@
 
       if (!state.tripData || !state.predictionData) return;
 
-      // 1. Raw GPS Track (Cyan dotted line)
+      // 1. Raw GPS Track (Warm Google Amber dotted trail + clickable pins)
       const gpsLatLngs = state.tripData.gps_points.map(p => [p.lat, p.lon]);
       const gpsLine = L.polyline(gpsLatLngs, {
-        color: '#00f0ff',
+        color: '#F9AB00',
         weight: 2,
-        opacity: 0.65,
-        dashArray: '3, 6',
+        opacity: 0.7,
+        dashArray: '4, 6',
       });
       state.gpsLayer.addLayer(gpsLine);
 
@@ -994,10 +1108,10 @@
       state.tripData.gps_points.forEach((p, idx) => {
         if (idx % 2 === 0 || idx === state.tripData.gps_points.length - 1) {
           const marker = L.circleMarker([p.lat, p.lon], {
-            radius: 3,
-            color: '#00f0ff',
-            fillColor: '#070a12',
-            fillOpacity: 0.9,
+            radius: 3.5,
+            color: '#FFFFFF',
+            fillColor: '#F9AB00',
+            fillOpacity: 0.95,
             weight: 1.5,
           });
           marker.on('click', () => {
@@ -1010,27 +1124,37 @@
         }
       });
 
-      // 2. Ground Truth Route (Amber polyline)
+      // 2. Ground Truth Route (Soft Emerald Green polyline)
       state.tripData.gt_segments.forEach(seg => {
         if (seg.coords) {
           const gtLine = L.polyline(seg.coords, {
-            color: '#f59e0b',
-            weight: 5,
-            opacity: 0.5,
+            color: '#1E8E3E',
+            weight: 7,
+            opacity: 0.35,
           });
           state.gtLayer.addLayer(gtLine);
         }
       });
 
-      // 3. Model Predicted Route (Cyber Emerald polyline)
+      // 3. Model Predicted Route (Google Maps Active Route Blue #4285F4 with #1967D2 casing border)
       state.predictionData.matched_segments.forEach(seg => {
         if (seg.coords) {
           const isCorrect = seg.is_match === 1;
-          const predLine = L.polyline(seg.coords, {
-            color: isCorrect ? '#10b981' : '#ef4444',
-            weight: 3.5,
-            opacity: 0.85,
+          const borderLine = L.polyline(seg.coords, {
+            color: isCorrect ? '#1967D2' : '#B31412',
+            weight: 6.5,
+            opacity: 0.9,
+            lineCap: 'round',
+            lineJoin: 'round',
           });
+          const predLine = L.polyline(seg.coords, {
+            color: isCorrect ? '#4285F4' : '#D93025',
+            weight: 4,
+            opacity: 0.98,
+            lineCap: 'round',
+            lineJoin: 'round',
+          });
+          state.predLayer.addLayer(borderLine);
           state.predLayer.addLayer(predLine);
         }
       });
@@ -1046,7 +1170,7 @@
 
       // Smooth auto-fit bounds
       if (state.tripData.bbox) {
-        map.fitBounds(state.tripData.bbox, { padding: [50, 50], maxZoom: 16 });
+        map.fitBounds(state.tripData.bbox, { padding: [70, 70], maxZoom: 16 });
       }
     }
 
@@ -1056,7 +1180,7 @@
       const d = state.predictionData;
 
       document.getElementById('statTop1Acc').textContent = d.top1_accuracy_pct;
-      document.getElementById('statAccDetail').textContent = `${d.correct_obs} / ${d.total_obs} matched`;
+      document.getElementById('statAccDetail').textContent = `${d.correct_obs} / ${d.total_obs} obs matched`;
       document.getElementById('statContinuity').textContent = d.continuity_pct;
       document.getElementById('statAccuracyPct').textContent = d.top1_accuracy_pct;
 
@@ -1090,6 +1214,11 @@
       document.getElementById('metaLon').textContent = pt.lon.toFixed(6);
       document.getElementById('metaTime').textContent = `${pt.timestamp.toFixed(1)}s`;
 
+      const coordsBar = document.getElementById('bottomCoordsDisplay');
+      if (coordsBar) {
+        coordsBar.textContent = `${pt.lat.toFixed(4)}° N, ${pt.lon.toFixed(4)}° E`;
+      }
+
       // Update vehicle marker position
       if (state.vehicleMarker) {
         state.vehicleMarker.setLatLng([pt.lat, pt.lon]);
@@ -1113,16 +1242,16 @@
       state.candLayer.clearLayers();
 
       if (cands.length === 0) {
-        candContainer.innerHTML = `<div class="text-xs text-slate-500 font-mono py-2 text-center">No candidate arcs found</div>`;
+        candContainer.innerHTML = `<div class="text-xs text-[#5F6368] font-mono py-2 text-center">No candidate arcs found</div>`;
         document.getElementById('metaMatch').textContent = 'None';
-        document.getElementById('metaMatch').className = 'text-slate-400 font-bold';
+        document.getElementById('metaMatch').className = 'text-[#5F6368] font-bold';
         return;
       }
 
       const topMatch = cands[0];
       const isCorrect = topMatch.is_match === 1;
-      document.getElementById('metaMatch').textContent = isCorrect ? 'MATCH (1)' : 'MISMATCH (0)';
-      document.getElementById('metaMatch').className = isCorrect ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
+      document.getElementById('metaMatch').textContent = isCorrect ? 'MATCHED' : 'MISMATCH';
+      document.getElementById('metaMatch').className = isCorrect ? 'text-[#1E8E3E] font-bold' : 'text-[#D93025] font-bold';
 
       // Render candidate arcs
       candContainer.innerHTML = cands.map((c, cIdx) => {
@@ -1133,30 +1262,30 @@
         // Render on map if candidate layer active
         if (c.coords && document.getElementById('layerCandidates').checked) {
           const candLine = L.polyline(c.coords, {
-            color: isTop ? '#00f0ff' : '#a855f7',
-            weight: isTop ? 4 : 2,
-            opacity: isTop ? 0.9 : 0.4,
+            color: isTop ? '#1A73E8' : '#9334E6',
+            weight: isTop ? 4.5 : 2.5,
+            opacity: isTop ? 0.95 : 0.45,
             dashArray: isTop ? null : '4, 4',
           });
           state.candLayer.addLayer(candLine);
         }
 
         return `
-          <div class="p-2 rounded-lg ${isTop ? 'bg-cyan-500/10 border border-cyan-500/30' : 'bg-black/40 border border-white/5'} flex items-center justify-between transition hover:border-white/20">
+          <div class="p-2 rounded-xl ${isTop ? 'bg-[#E8F0FE] border border-[#D2E3FC]' : 'bg-[#F8F9FA] border border-[#E8EAED]'} flex items-center justify-between transition hover:border-[#1A73E8]">
             <div class="flex items-center gap-2">
-              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded ${isTop ? 'bg-cyan-400 text-slate-950 font-bold' : 'bg-white/10 text-slate-300'}">#${cIdx + 1}</span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded-md ${isTop ? 'bg-[#1A73E8] text-white font-bold' : 'bg-white text-[#5F6368] border border-[#E8EAED]'}">#${cIdx + 1}</span>
               <div class="flex flex-col">
-                <span class="text-[11px] font-mono text-white font-medium flex items-center gap-1.5">
+                <span class="text-[11px] font-mono text-[#202124] font-semibold flex items-center gap-1.5">
                   Arc ${c.arc_id}
-                  ${isTrue ? '<span class="text-[9px] px-1 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">GT</span>' : ''}
+                  ${isTrue ? '<span class="text-[9px] px-1.5 py-0.2 rounded-full bg-[#E6F4EA] text-[#1E8E3E] font-bold">GT</span>' : ''}
                 </span>
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <div class="w-12 bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                <div class="h-1.5 ${isTop ? (isCorrect ? 'bg-emerald-400' : 'bg-cyan-400') : 'bg-slate-500'}" style="width: ${probPct}%"></div>
+              <div class="w-12 bg-[#E8EAED] rounded-full h-1.5 overflow-hidden">
+                <div class="h-1.5 ${isTop ? (isCorrect ? 'bg-[#1E8E3E]' : 'bg-[#1A73E8]') : 'bg-[#9AA0A6]'}" style="width: ${probPct}%"></div>
               </div>
-              <span class="text-[10px] font-mono font-bold ${isTop ? (isCorrect ? 'text-emerald-400' : 'text-cyan-400') : 'text-slate-400'} w-10 text-right">${probPct}%</span>
+              <span class="text-[10px] font-mono font-bold ${isTop ? (isCorrect ? 'text-[#1E8E3E]' : 'text-[#1A73E8]') : 'text-[#5F6368]'} w-10 text-right">${probPct}%</span>
             </div>
           </div>
         `;
@@ -1193,6 +1322,18 @@
       }
     }
 
+    // Sync active model chip UI
+    function syncModelChips(selectedModel) {
+      document.querySelectorAll('.model-chip').forEach(btn => {
+        const m = btn.getAttribute('data-model-chip');
+        if (m === selectedModel) {
+          btn.className = 'model-chip px-3 py-1.5 rounded-full text-xs font-medium bg-[#1A73E8] text-white shadow-sm border border-[#1A73E8] whitespace-nowrap transition-all duration-200 ease-out flex items-center gap-1.5';
+        } else {
+          btn.className = 'model-chip px-3 py-1.5 rounded-full text-xs font-medium bg-white hover:bg-[#F1F3F4] text-[#202124] shadow-sm border border-[#E8EAED] whitespace-nowrap transition-all duration-200 ease-out';
+        }
+      });
+    }
+
     // Event listeners
     function setupEventListeners() {
       // Trip selection
@@ -1200,17 +1341,87 @@
         loadTrip(e.target.value);
       });
 
-      // Model selection
+      // Model selection dropdown
       document.getElementById('modelSelect').addEventListener('change', async (e) => {
         state.currentModel = e.target.value;
+        syncModelChips(state.currentModel);
         updateHeaderModelMeta(state.currentModel);
         await reloadModelPredictions();
       });
 
+      // Horizontal Model Category Chips
+      document.querySelectorAll('.model-chip').forEach(chip => {
+        chip.addEventListener('click', async () => {
+          const modelKey = chip.getAttribute('data-model-chip');
+          state.currentModel = modelKey;
+          document.getElementById('modelSelect').value = modelKey;
+          syncModelChips(modelKey);
+          updateHeaderModelMeta(modelKey);
+          await reloadModelPredictions();
+        });
+      });
+
+      // Collapsible Top-Left Place/Route Details Card
+      const btnToggleCard = document.getElementById('btnToggleDetailsCard');
+      const detailsCard = document.getElementById('floatingDetailsCard');
+      const iconCollapse = document.getElementById('iconCollapseCard');
+      if (btnToggleCard && detailsCard) {
+        btnToggleCard.addEventListener('click', () => {
+          detailsCard.classList.toggle('hidden');
+          iconCollapse.classList.toggle('rotate-180');
+        });
+      }
+
+      // Collapsible Bottom-Right Layers Menu Card
+      const btnToggleLayers = document.getElementById('btnToggleLayersCard');
+      const layersMenuCard = document.getElementById('layersMenuCard');
+      if (btnToggleLayers && layersMenuCard) {
+        btnToggleLayers.addEventListener('click', () => {
+          layersMenuCard.classList.toggle('hidden');
+        });
+      }
+
+      // Map / Terrain / Satellite Tile Switcher Buttons
+      document.querySelectorAll('.tile-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mode = btn.getAttribute('data-tile-mode');
+          if (activeTileLayer) map.removeLayer(activeTileLayer);
+          activeTileLayer = tileLayers[mode] || tileLayers.map;
+          activeTileLayer.addTo(map);
+
+          const labelMap = { map: 'Light Map', terrain: 'Terrain', satellite: 'Satellite' };
+          const lbl = document.getElementById('activeTileLabel');
+          if (lbl) lbl.textContent = labelMap[mode] || 'Light Map';
+
+          document.querySelectorAll('.tile-mode-btn').forEach(b => {
+            if (b.getAttribute('data-tile-mode') === mode) {
+              b.className = 'tile-mode-btn py-1.5 px-2 rounded-lg bg-[#E8F0FE] text-[#1A73E8] border border-[#1A73E8] font-semibold text-center transition-all duration-200';
+            } else {
+              b.className = 'tile-mode-btn py-1.5 px-2 rounded-lg bg-[#F8F9FA] text-[#5F6368] hover:text-[#202124] border border-[#E8EAED] text-center transition-all duration-200';
+            }
+          });
+        });
+      });
+
+      // Zoom In / Zoom Out & Locate Crosshair Buttons
+      const btnZoomIn = document.getElementById('btnZoomIn');
+      const btnZoomOut = document.getElementById('btnZoomOut');
+      const btnLocateVehicle = document.getElementById('btnLocateVehicle');
+      if (btnZoomIn) btnZoomIn.addEventListener('click', () => map.zoomIn());
+      if (btnZoomOut) btnZoomOut.addEventListener('click', () => map.zoomOut());
+      if (btnLocateVehicle) {
+        btnLocateVehicle.addEventListener('click', () => {
+          if (state.tripData && state.tripData.gps_points[state.playbackIndex]) {
+            const pt = state.tripData.gps_points[state.playbackIndex];
+            map.flyTo([pt.lat, pt.lon], Math.max(map.getZoom(), 15), { duration: 0.4 });
+          }
+        });
+      }
+
       // Fit bounds button
       document.getElementById('btnFitBounds').addEventListener('click', () => {
         if (state.tripData && state.tripData.bbox) {
-          map.fitBounds(state.tripData.bbox, { padding: [50, 50], maxZoom: 16 });
+          map.fitBounds(state.tripData.bbox, { padding: [70, 70], maxZoom: 16 });
         }
       });
 
