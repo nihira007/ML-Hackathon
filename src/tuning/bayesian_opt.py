@@ -137,6 +137,8 @@ def run_tuning(train, test, features, advanced, output, artifacts, *, trials, ep
         raise ValueError("Person 2's real v2 comparison CSV is required before official tuning")
     if trials < (2 if smoke else 35):
         raise ValueError("Use at least 35 trials for the official run or two for a smoke run")
+    if sorted(record["model"] for record in advanced) != sorted(NAMES):
+        raise ValueError("Expected exactly one v2 baseline for each of LightGBM, XGBoost, and MLP")
     for record in advanced:
         if record["data_signature"] != signature or record["feature_version"] != "v2":
             raise ValueError("Re-run all advanced baselines on these exact v2 inputs before tuning")
